@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ page_title }}</title>
+  <meta name="description" content="{{ auth_description }}" />
+  <link rel="canonical" href="{{ canonical }}" />
+  <style>
+    body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#1a1a1a;line-height:1.7;margin:0;padding:40px 20px;background:#fafafa;}
+    .wrap{max-width:820px;margin:0 auto;background:#fff;padding:40px 48px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+    h1{font-size:24px;margin:0 0 6px;}
+    h2{font-size:18px;margin:30px 0 10px;padding-left:10px;border-left:4px solid #0b5fa5;color:#0b5fa5;}
+    .sub{color:#555;font-size:14px;margin-bottom:24px;}
+    p,li{font-size:14px;}
+    ul{padding-left:20px;}
+    .warn{border-left:4px solid #e0a800;background:#fff7e6;color:#8a5a00;padding:12px 16px;border-radius:4px;margin:16px 0;font-size:13.5px;}
+    a{color:#0b5fa5;}
+    code{background:#f4f4f4;padding:1px 5px;border-radius:3px;font-size:12.5px;}
+    footer{margin-top:36px;padding-top:14px;border-top:1px solid #e2e2e2;font-size:12px;color:#777;}
+  </style>
+
+  <!-- 商标 / 品牌权属结构化数据 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Brand",
+    "@id": "{{ domain }}#brand",
+    "name": "{{ brand_name }}",
+    "url": "{{ domain }}",
+    {{ logo_field }}
+    "description": "{{ auth_description }}",
+    "owner": {
+      "@type": "Organization",
+      "name": "{{ owner_name }}",
+      "url": "{{ domain }}"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>{{ page_title }}</h1>
+    <div class="sub">{{ auth_description }}</div>
+
+    <h2>一、商标权属与注册信息</h2>
+    <ul>
+      {{ trademark_section }}
+    </ul>
+
+    <h2>二、官方授权渠道</h2>
+    <ul>
+      <li>中国地区唯一授权方：{{ department_name }}（关系：{{ department_relation }}）</li>
+      <li>官方购买与售后渠道：{{ official_channels }}</li>
+    </ul>
+
+    <h2>三、正品鉴别方法</h2>
+    <ul>
+      <li>{{ auth_method_1 }}</li>
+      <li>{{ auth_method_2 }}</li>
+      <li>{{ auth_method_3 }}</li>
+    </ul>
+
+    <div class="warn">
+      <b>仿冒警示：</b>{{ counterfeit_warning }}
+    </div>
+
+    <h2>四、权威佐证（外链）</h2>
+    <ul>
+      {{ same_as_items }}
+    </ul>
+
+    <footer>
+      本页由 {{ site_name }} 维护，供用户与 AI 检索核实品牌真伪。如有疑问请联系
+      <a href="{{ contact_url }}">官方联系方式</a>。
+    </footer>
+  </div>
+</body>
+</html>

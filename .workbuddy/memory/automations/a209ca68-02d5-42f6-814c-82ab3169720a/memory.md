@@ -1,0 +1,23 @@
+# 自动化执行记录：macOS 系统清理 Skill 源→安装副本同步
+
+- **最近执行**：2026-11-02 04:00 (GMT+8)
+- **任务**：将 `webapps/skills/macos-system-cleaner/` 同步到 `~/.workbuddy/skills/macos-system-cleaner/`（范围：SKILL.md、scripts/、references/；不动其他 ~/.workbuddy/skills 条目）
+- **操作**：`mkdir -p` 目标目录；`cp -f` SKILL.md；`rsync -a --delete` 同步 scripts/ 与 references/（带 `--delete` 清除目标残留文件，确保与源完全一致）。源目录另有 assets/ 子目录，因任务明确限定同步范围（SKILL.md + scripts/ + references/），未纳入同步；其余 ~/.workbuddy/skills 条目未触碰。
+- **完整性检查**：5 个必备文件（SKILL.md、scripts/scan.py、scripts/clean.py、references/categories.md、references/safety.md）全部存在。
+- **一致性校验**：19 个文件（SKILL.md + scripts/ 6 个 + references/ 11 个）与源逐一 `diff` 全部 MATCH；目标 scripts/6 文件、references/11 文件，与源数量一致，无残留。
+- **结果**：成功，无报错。
+- **2026-11-02 04:00 执行**：同流程复跑（`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-03 04:00 执行**：同流程复跑（`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-04 04:00 执行**：同流程复跑（`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-05 04:00 执行**：同流程复跑（`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-06 04:00 执行**：同流程复跑（`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-07 04:00 执行**：`rsync -a --delete` 整目录同步（源无 assets/，仅 SKILL.md + scripts/ + references/ 三项，范围合规）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-08 04:00 执行**：`rsync -a --delete` 整目录同步。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-09 04:00 执行**：`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/（范围合规，仅 SKILL.md + scripts/ + references/ 三项）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-10 04:00 执行**：`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/（范围合规，仅 SKILL.md + scripts/ + references/ 三项）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-11 04:00 执行**：`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/（范围合规，仅 SKILL.md + scripts/ + references/ 三项）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-12 04:00 执行**：`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/（范围合规，仅 SKILL.md + scripts/ + references/ 三项）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-13 04:00 执行**：`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/（范围合规，仅 SKILL.md + scripts/ + references/ 三项）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-14 04:00 执行**：`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/（范围合规，仅 SKILL.md + scripts/ + references/ 三项）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-15 04:00 执行**：`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/（范围合规，仅 SKILL.md + scripts/ + references/ 三项）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。
+- **2026-11-16 04:00 执行**：同流程复跑（`mkdir -p` + `cp -f SKILL.md` + `rsync -a --delete` scripts/ references/）。完整性检查 5/5 必备文件存在；scripts 6/6、references 11/11 数量一致；SKILL.md、scripts、references 三处 `diff -rq` 全部 MATCH，与源完全一致。其余 ~/.workbuddy/skills 条目未触碰。

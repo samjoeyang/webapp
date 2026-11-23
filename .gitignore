@@ -1,0 +1,12 @@
+node_modules
+dist
+.DS_Store
+*.local
+
+# 根 .gitignore 的 Python 打包规则 lib/ 会误伤前端源码目录，这里重新包含
+!meeting-checkin/src/lib/
+!meeting-checkin/src/lib/**
+.playwright-cli/
+.workbuddy/tmp/
+.vercel
+.env*

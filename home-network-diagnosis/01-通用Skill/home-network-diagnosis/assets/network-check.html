@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭网络自检与智能诊断</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --txt:#1f2933; --sub:#647184;
+    --line:#e3e8ef; --accent:#2f6df6; --ok:#1f9d55; --warn:#e08a00; --bad:#d64545;
+    --chip:#eef3ff; --shadow:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1419; --card:#1a212b; --txt:#e6edf3; --sub:#8b98a8;
+      --line:#2a333f; --accent:#4f8cff; --ok:#39c07e; --warn:#f0a93b; --bad:#ff6b6b;
+      --chip:#1e2a3d; --shadow:0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;
+    font-size:14px;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--sub);font-size:13px;margin-bottom:18px}
+  .topbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px}
+  .score{display:flex;align-items:center;gap:14px}
+  .ring{--v:0;width:74px;height:74px;border-radius:50%;display:grid;place-items:center;
+    background:conic-gradient(var(--ringc) calc(var(--v)*1%),var(--line) 0);position:relative}
+  .ring::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--card)}
+  .ring b{position:relative;font-size:22px;font-weight:700}
+  .score .lbl{font-size:12px;color:var(--sub)}
+  .verdict{font-size:16px;font-weight:600}
+  .conn{display:flex;flex-wrap:wrap;gap:10px;margin-left:auto}
+  .conn .it{background:var(--chip);border-radius:10px;padding:6px 11px;font-size:12px;color:var(--sub)}
+  .conn .it b{color:var(--txt);font-weight:600}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--txt);
+    border-radius:10px;padding:9px 15px;box-shadow:var(--shadow);transition:.15s}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.on{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  canvas{width:100%;height:200px;display:block}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  th,td{text-align:right;padding:6px 6px;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--sub);font-weight:600}
+  .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+  .tag.ok{background:rgba(31,157,85,.14);color:var(--ok)}
+  .tag.warn{background:rgba(224,138,0,.16);color:var(--warn)}
+  .tag.bad{background:rgba(214,69,69,.16);color:var(--bad)}
+  .gauge{display:flex;gap:18px;align-items:center}
+  .gbig{font-size:30px;font-weight:700}
+  .gbig small{font-size:14px;font-weight:500;color:var(--sub)}
+  .bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:8px}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+  .diag .item{border-left:3px solid var(--line);padding:8px 12px;margin:8px 0;background:var(--chip);border-radius:0 8px 8px 0}
+  .diag .item.lv1{border-color:var(--bad)} .diag .item.lv2{border-color:var(--warn)} .diag .item.lv3{border-color:var(--ok)}
+  .diag .item h3{margin:0 0 4px;font-size:13.5px}
+  .diag .item p{margin:0;color:var(--sub);font-size:12.5px}
+  .checklist li{margin:6px 0}
+  .log{height:180px;overflow:auto;background:var(--chip);border-radius:10px;padding:10px 12px;font-size:12px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--sub);line-height:1.7}
+  .log b{color:var(--txt)}
+  .muted{color:var(--sub);font-size:12px}
+  .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .row:last-child{border-bottom:none}
+  .row b{font-weight:600}
+  a{color:var(--accent)}
+  .card input{font:inherit;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt);width:150px}
+  .card .field{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px}
+  .card .field>span{color:var(--sub);min-width:60px}
+  .extlink{display:block;padding:9px 12px;border:1px solid var(--line);border-radius:10px;text-decoration:none;font-size:13px;background:var(--chip);color:var(--txt)}
+  .extlink:hover{border-color:var(--accent)}
+  .extlink b{color:var(--accent)}
+  .clash-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px}
+  .clash-item .head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .clash-item .addr{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏠 家庭网络自检与智能诊断</h1>
+  <div class="sub">浏览器端全面检测：延迟 / 抖动 / 网速 / DNS / IPv6，并自动定位瓶颈、给出可执行的修复步骤。</div>
+
+  <div class="topbar">
+    <div class="score">
+      <div class="ring" id="ring" style="--v:0;--ringc:var(--sub)"><b id="scoreNum">--</b></div>
+      <div>
+        <div class="verdict" id="verdict">尚未检测</div>
+        <div class="lbl">综合健康评分（0–100）</div>
+      </div>
+    </div>
+    <div class="conn" id="connBox">
+      <div class="it">连接：<b id="cType">检测中…</b></div>
+      <div class="it">公网 IPv4：<b id="ipv4">--</b></div>
+      <div class="it">公网 IPv6：<b id="ipv6">--</b></div>
+    </div>
+  </div>
+
+  <div class="btns">
+    <button class="primary" id="btnRun">▶ 开始全面检测</button>
+    <button id="btnMonitor">🔁 持续监控：关</button>
+    <button id="btnCache">🧹 清理浏览器缓存</button>
+    <button id="btnReport">📄 导出诊断报告</button>
+    <button id="btnCopyLink">🔗 复制本页链接</button>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2><span class="dot"></span>延迟与抖动（多节点并行探测）</h2>
+      <canvas id="chart"></canvas>
+      <table id="latTable">
+        <thead><tr><th>节点</th><th>平均</th><th>最小</th><th>最大</th><th>抖动</th><th>丢包</th></tr></thead>
+        <tbody><tr><td colspan="6" class="muted">点击「开始全面检测」后显示</td></tr></tbody>
+      </table>
+      <div id="syncVerdict" class="muted" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>网速测试</h2>
+      <div class="gauge">
+        <div><div class="gbig" id="dlSpeed">--<small> Mbps</small></div><div class="muted">下载</div></div>
+        <div><div class="gbig" id="ulSpeed">--<small> Mbps</small></div><div class="muted">上传</div></div>
+      </div>
+      <div class="bar"><i id="dlBar"></i></div>
+      <div class="muted" id="speedNote" style="margin-top:8px">下载/上传通过 Cloudflare 测速节点（CORS）。若所在网络访问不畅会显示不可用，属正常。</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>DNS 解析</h2>
+      <div id="dnsBox"><div class="muted">检测中…</div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>IPv6 支持</h2>
+      <div id="ipv6Box"><div class="muted">检测中…</div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>饱和测试 / Bufferbloat</h2>
+      <div id="bbBox"><div class="muted">检测中…（全面检测时自动运行：边下载边测延迟）</div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>WebRTC 隐私 / NAT</h2>
+      <div id="rtcBox"><div class="muted">检测中…（暴露的真实公网/内网 IP 与 NAT 类型）</div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>本地服务暴露扫描</h2>
+      <div id="localBox"><div class="muted">检测中…（仅扫描本机 127.0.0.1，安全）</div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>安全 / 加密姿态</h2>
+      <div id="secBox"><div class="muted">检测中…（HTTPS / DoH / 混合内容）</div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>Clash 本地安全检测</h2>
+      <div id="clashLocalBox"><div class="muted">检测本机 Clash / Mihomo 的「外部控制端口」是否在无密钥状态下可被本地网页读取。仅在本机运行，不触碰任何外部主机。（若页面以 HTTPS 打开，浏览器可能拦截对 127.0.0.1 的明文请求；如遇全部「未暴露」但确认 Clash 在运行，请用 http:// 或 file:// 协议打开本页。）</div></div>
+      <div class="field"><span>控制地址</span><input id="clashHost" value="127.0.0.1"></div>
+      <div class="field"><span>端口</span><input id="clashPorts" value="9090, 9097"></div>
+      <button id="btnClashLocal" class="primary" style="margin-top:10px">检测本机 Clash</button>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>Clash 全球暴露态势</h2>
+      <div class="muted">通过公开、合法的互联网资产搜索引擎查询全球暴露的 Clash / Mihomo 控制服务，仅用于安全研究与自身资产排查。本工具<b>不主动扫描、不触碰任何他人主机</b>。</div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+        <a class="extlink" id="linkFofa" target="_blank" rel="noopener"><b>FOFA</b> · body="hello:mihomo/clash"</a>
+        <a class="extlink" id="linkShodan" target="_blank" rel="noopener"><b>Shodan</b> · port 9090 / 9097</a>
+        <a class="extlink" id="linkZoom" target="_blank" rel="noopener"><b>ZoomEye</b> · Clash / Mihomo</a>
+      </div>
+      <div class="muted" style="margin-top:10px">若你的 Clash 开启了 allow-lan 并把控制端口暴露到局域网/公网，可在左侧「本地检测」把地址改为你的局域网 IP 复测。</div>
+    </div>
+
+    <div class="card diag" style="grid-column:1 / -1">
+      <h2><span class="dot"></span>智能诊断与自主处置</h2>
+      <div id="diagBox"><div class="muted">运行检测后，这里会给出综合判定与分级修复建议。</div></div>
+      <ul class="checklist" id="checklist" style="margin-top:12px"></ul>
+    </div>
+
+    <div class="card" style="grid-column:1 / -1">
+      <h2><span class="dot"></span>实时日志 / 监控</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- 配置 ---------- */
+const EP = [
+  {name:"百度",  url:"https://www.baidu.com"},
+  {name:"淘宝",  url:"https://www.taobao.com"},
+  {name:"腾讯",  url:"https://www.qq.com"},
+  {name:"BootCDN", url:"https://cdn.bootcdn.net"},
+  {name:"哔哩哔哩", url:"https://www.bilibili.com/favicon.ico"},
+  {name:"抖音",  url:"https://www.douyin.com/favicon.ico"}
+];
+const ROUNDS = 20;          // 全面检测每节点采样轮数
+const MON_ROUNDS = 8;       // 监控模式每轮采样数
+const TIMEOUT = 2500;       // 单次探测超时(ms)，超时视为"丢包"
+const JITTER_THRESH = 25;   // 抖动告警阈值(ms)
+const HISTORY_MAX = 120;
+
+/* ---------- 自适应 URL：域名/路径自适应 + 查询参数全保留 ----------
+ * 迁移/部署说明：本工具对任何固定域名、绝对路径都无依赖。
+ * 自身资源一律相对引用；所有自引用都经 SELF 在运行时基于 location 推导，
+ * 并默认保留 URL 中的全部查询参数（如 ?ref=、?theme=、?endpoint= 等）。
+ * 换域名、换子路径、带参数部署均无需改代码。                                */
+const SELF = (() => {
+  const loc   = new URL(location.href);
+  const segs  = loc.pathname.split("/");
+  const file  = segs.pop() || "network-check.html";      // 当前页面文件名
+  const dir   = segs.join("/") + (segs.length ? "/" : ""); // 当前所在目录（兼容子路径部署）
+  const params = new URLSearchParams(loc.search);          // 当前全部查询参数
+  // url(overrides?, sibling?) -> 指向本页(或同目录 sibling 文件)的完整 URL
+  // 默认保留全部现有查询参数；overrides 中同名键覆盖、值为 "" / null / undefined 则删除
+  function url(overrides, sibling){
+    const u = new URL(loc.origin + dir + (sibling || file));
+    const p = new URLSearchParams(params);                 // 复制并保留全部现有参数
+    if (overrides) for (const k in overrides){
+      const v = overrides[k];
+      if (v === null || v === undefined || v === "") p.delete(k);
+      else p.set(k, String(v));
+    }
+    u.search = p.toString();
+    return u.toString();
+  }
+  return { origin: loc.origin, dir, file, params, url, raw: loc.href };
+})();
+
+/* ---------- 状态 ---------- */
+const state = {
+  hist: {},            // name -> [rtt,...]
+  results: {},         // name -> {avg,min,max,jit,loss}
+  running:false, monitor:false, monitorTimer:null,
+  ipv4:null, ipv6:null,
+  bb:null, rtc:null, local:null, sec:null
+};
+EP.forEach(e=>state.hist[e.name]=[]);
+
+/* ---------- 工具 ---------- */
+function log(msg, cls){
+  const el=document.getElementById("log");
+  const t=new Date().toLocaleTimeString("zh-CN",{hour12:false});
+  const line=document.createElement("div");
+  line.innerHTML=`<b>[${t}]</b> ${msg}`;
+  if(cls) line.style.color = cls==="bad"?"var(--bad)":cls==="ok"?"var(--ok)":cls==="warn"?"var(--warn)":"";
+  el.appendChild(line);
+  el.scrollTop=el.scrollHeight;
+}
+function $(id){return document.getElementById(id);}
+
+async function probe(url){
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),TIMEOUT);
+  const t0=performance.now();
+  try{
+    await fetch(url,{method:"GET",mode:"no-cors",cache:"no-store",signal:ctrl.signal});
+    const rtt=performance.now()-t0;
+    clearTimeout(to);
+    return {ok:true,rtt};
+  }catch(e){
+    clearTimeout(to);
+    return {ok:false,rtt:TIMEOUT};
+  }
+}
+
+function stats(arr){
+  const v=arr.filter(x=>x<TIMEOUT);
+  if(!v.length) return {avg:0,min:0,max:0,jit:0,loss:100,samples:arr.length};
+  const avg=v.reduce((a,b)=>a+b,0)/v.length;
+  const min=Math.min(...v),max=Math.max(...v);
+  let jit=0;
+  for(let i=1;i<v.length;i++) jit+=Math.abs(v[i]-v[i-1]);
+  jit = v.length>1 ? jit/(v.length-1) : 0;
+  const loss=(arr.length-v.length)/arr.length*100;
+  return {avg,min,max,jit,loss,samples:arr.length};
+}
+
+/* 一轮：所有节点并行探测 */
+async function round(){
+  const proms=EP.map(e=>probe(e.url));
+  const res=await Promise.all(proms);
+  EP.forEach((e,i)=>{
+    state.hist[e.name].push(res[i].ok?res[i].rtt:TIMEOUT);
+    if(state.hist[e.name].length>HISTORY_MAX) state.hist[e.name].shift();
+  });
+  return res;
+}
+
+/* ---------- 图表 ---------- */
+const cv=$("chart"), ctx=cv.getContext("2d");
+function resize(){cv.width=cv.clientWidth*2;cv.height=cv.clientHeight*2;ctx.scale(2,2);drawChart();}
+window.addEventListener("resize",resize);
+
+function drawChart(){
+  const W=cv.clientWidth,H=cv.clientHeight;
+  const css=getComputedStyle(document.body);
+  const cLine=css.getPropertyValue("--line").trim();
+  const cSub=css.getPropertyValue("--sub").trim();
+  const cTxt=css.getPropertyValue("--txt").trim();
+  const cols={"百度":"#2f6df6","淘宝":"#1f9d55","腾讯":"#e08a00","BootCDN":"#9b59b6","哔哩哔哩":"#fb7299","抖音":"#06b6d4"};
+  ctx.clearRect(0,0,W,H);
+  // 计算纵轴范围
+  let maxV=50;
+  EP.forEach(e=>state.hist[e.name].forEach(v=>maxV=Math.max(maxV,v)));
+  maxV=Math.min(maxV*1.1, TIMEOUT);
+  const L=38,R=10,T=14,B=22;
+  const x=i=>L+(W-L-R)*i/Math.max(ROUNDS-1,1);
+  const y=v=>H-B-(H-T-B)*v/maxV;
+  // 网格 + 刻度
+  ctx.strokeStyle=cLine;ctx.fillStyle=cSub;ctx.font="11px sans-serif";ctx.lineWidth=1;
+  for(let k=0;k<=5;k++){
+    const vv=maxV*k/5, yy=y(vv);
+    ctx.beginPath();ctx.moveTo(L,yy);ctx.lineTo(W-R,yy);ctx.stroke();
+    ctx.textAlign="right";ctx.fillText(vv.toFixed(0),L-5,yy+4);
+  }
+  ctx.textAlign="center";ctx.fillText("采样轮次 →",(W)/2,H-4);
+  // 线条
+  EP.forEach(e=>{
+    const d=state.hist[e.name];if(!d.length)return;
+    const col=cols[e.name]||"#888";
+    ctx.strokeStyle=col;ctx.lineWidth=1.6;ctx.beginPath();
+    d.forEach((v,i)=>{const px=x(i),py=y(v);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    // 超时点标记
+    ctx.fillStyle="rgba(214,69,69,.55)";
+    d.forEach((v,i)=>{if(v>=TIMEOUT){ctx.beginPath();ctx.arc(x(i),y(TIMEOUT),2.4,0,7);ctx.fill();}});
+  });
+  // 图例
+  let lx=L+4,ly=T+8;
+  EP.forEach(e=>{
+    ctx.fillStyle=cols[e.name]||"#888";ctx.fillRect(lx,ly-8,9,9);
+    ctx.fillStyle=cTxt;ctx.textAlign="left";ctx.fillText(e.name,lx+12,ly);
+    lx+=ctx.measureText(e.name).width+30;
+  });
+}
+
+/* ---------- 同步抖动判定 ---------- */
+function syncAnalysis(){
+  // 计算每轮的"相对尖峰"：该轮 rtt 是否明显高于该节点自身基线
+  const names=EP.map(e=>e.name);
+  let syncRounds=0, totalRounds=0;
+  const lens=names.map(n=>state.hist[n].length);
+  const n=Math.min(...lens);
+  if(n<5) return {ok:false};
+  const baselines=names.map(nm=>{
+    const v=state.hist[nm].filter(x=>x<TIMEOUT);return v.length?v.reduce((a,b)=>a+b,0)/v.length:TIMEOUT;
+  });
+  let spikeInRound=new Array(n).fill(0);
+  for(let r=0;r<n;r++){
+    let spiked=0;
+    names.forEach((nm,i)=>{
+      const v=state.hist[nm][r];
+      if(v>=TIMEOUT || v > baselines[i]+40) spiked++;
+    });
+    spikeInRound[r]=spiked;
+    if(spiked>=2) syncRounds++;
+  }
+  totalRounds=n;
+  const ratio=syncRounds/totalRounds;
+  return {ok:true,ratio,syncRounds,totalRounds};
+}
+
+/* ---------- 综合检测 ---------- */
+async function fullCheck(){
+  if(state.running)return;
+  state.running=true;$("btnRun").disabled=true;$("btnRun").textContent="检测中…";
+  log("▶ 开始全面检测…");
+  EP.forEach(e=>state.hist[e.name]=[]);
+  for(let r=0;r<ROUNDS;r++){
+    await round();
+    if(r%5===0) drawChart();
+  }
+  drawChart();
+  // 统计
+  EP.forEach(e=>state.results[e.name]=stats(state.hist[e.name]));
+  renderLatTable();
+  await runIp();
+  await runDns();
+  await runSecurity();
+  await runWebRTC();
+  await runLocalScan();
+  await runSpeed();
+  await runBufferbloat();
+  analyze();
+  state.running=false;$("btnRun").disabled=false;$("btnRun").textContent="▶ 重新检测";
+  log("✅ 全面检测完成","ok");
+}
+
+function renderLatTable(){
+  const tb=$("latTable").querySelector("tbody");
+  tb.innerHTML="";
+  EP.forEach(e=>{
+    const s=state.results[e.name]||{avg:0,min:0,max:0,jit:0,loss:0};
+    const lossTag=s.loss>2?'<span class="tag bad">'+s.loss.toFixed(0)+'%</span>'
+                :s.loss>0?'<span class="tag warn">'+s.loss.toFixed(0)+'%</span>'
+                :'<span class="tag ok">0%</span>';
+    const jit=s.jit>JITTER_THRESH?'<span class="tag warn">'+s.jit.toFixed(0)+'</span>'
+             :'<span class="tag ok">'+s.jit.toFixed(0)+'</span>';
+    tb.innerHTML+=`<tr><td>${e.name}</td><td>${s.avg.toFixed(0)}</td><td>${s.min.toFixed(0)}</td>
+      <td>${s.max.toFixed(0)}</td><td>${jit}</td><td>${lossTag}</td></tr>`;
+  });
+  const sa=syncAnalysis();
+  if(sa.ok){
+    if(sa.ratio>0.25){
+      $("syncVerdict").innerHTML=`<span class="tag bad">同步抖动</span> 约 ${(sa.ratio*100).toFixed(0)}% 的轮次出现多节点同时尖峰 → <b>根因在本地/路由器</b>（bufferbloat 或路由器性能），而非远端服务器。`;
+    }else if(sa.ratio>0){
+      $("syncVerdict").innerHTML=`<span class="tag ok">异步</span> 节点尖峰不同步（${(sa.ratio*100).toFixed(0)}%），多为各服务器自身波动。`;
+    }else{
+      $("syncVerdict").innerHTML=`<span class="tag ok">平稳</span> 未检测到明显同步抖动。`;
+    }
+  }
+}
+
+/* ---------- 网速 ---------- */
+async function runSpeed(){
+  const urls={
+    dl:"https://speed.cloudflare.com/__down?bytes=20000000",
+    ul:"https://speed.cloudflare.com/__up?bytes=5000000"
+  };
+  // 下载
+  try{
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),15000);
+    const t0=performance.now();
+    const res=await fetch(urls.dl,{cache:"no-store",signal:ctrl.signal});
+    const buf=await res.arrayBuffer();
+    clearTimeout(to);
+    const dt=(performance.now()-t0)/1000;
+    const mbps=(buf.byteLength*8/dt)/1e6;
+    $("dlSpeed").innerHTML=mbps.toFixed(1)+'<small> Mbps</small>';
+    $("dlBar").style.width=Math.min(100,mbps/2)+'%';
+    log(`下载速度 ${mbps.toFixed(1)} Mbps`,"ok");
+  }catch(e){
+    $("dlSpeed").innerHTML='不可用<small> </small>';
+    log("下载测速节点不可达（网络限制），跳过","warn");
+  }
+  // 上传
+  try{
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),15000);
+    const body=new Blob([new Uint8Array(5000000)]);
+    const t0=performance.now();
+    await fetch(urls.ul,{method:"POST",body,cache:"no-store",signal:ctrl.signal});
+    clearTimeout(to);
+    const dt=(performance.now()-t0)/1000;
+    const mbps=(5000000*8/dt)/1e6;
+    $("ulSpeed").innerHTML=mbps.toFixed(1)+'<small> Mbps</small>';
+    log(`上传速度 ${mbps.toFixed(1)} Mbps`,"ok");
+  }catch(e){
+    $("ulSpeed").innerHTML='不可用<small> </small>';
+  }
+}
+
+/* ---------- IP / IPv6 ---------- */
+async function runIp(){
+  async function getText(u){
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),6000);
+    try{const r=await fetch(u,{cache:"no-store",signal:ctrl.signal});clearTimeout(to);return (await r.text()).trim();}
+    catch(e){clearTimeout(to);return null;}
+  }
+  const v4=await getText("https://ipv4.icanhazip.com");
+  const v6=await getText("https://ipv6.icanhazip.com");
+  state.ipv4=v4; state.ipv6=v6;
+  $("ipv4").textContent=v4||"未获取";
+  $("ipv6").textContent=v6||"未获取";
+  const box=$("ipv6Box");
+  if(v6){
+    box.innerHTML=`<span class="tag ok">已支持 IPv6</span><div class="row" style="margin-top:8px"><span>IPv6 地址</span><b>${v6}</b></div>
+      <div class="muted" style="margin-top:6px">本机可经 IPv6 出网。若 IPv4 抖动严重，可尝试在系统/路由器优先 IPv6。</div>`;
+    log("IPv6 出网正常："+v6,"ok");
+  }else{
+    box.innerHTML=`<span class="tag warn">未检测到 IPv6</span><div class="muted" style="margin-top:6px">当前网络可能未分配公网 IPv6，或浏览器未走 IPv6。不影响上网，但不享受 IPv6 路径。</div>`;
+    log("未检测到 IPv6 出网","warn");
+  }
+}
+
+/* ---------- DNS ---------- */
+async function runDns(){
+  // 通过"首次解析 + 二次缓存"估算解析耗时
+  const domains=["www.baidu.com","www.taobao.com"];
+  let times=[];
+  for(const d of domains){
+    for(let k=0;k<2;k++){
+      const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),3000);
+      const t0=performance.now();
+      try{await fetch("https://"+d,{mode:"no-cors",cache:k===0?"no-store":"force-cache",signal:ctrl.signal});
+        const dt=performance.now()-t0;clearTimeout(to);
+        if(k===0) times.push(dt); // 首次含 DNS+连接
+      }catch(e){clearTimeout(to);}
+    }
+  }
+  const box=$("dnsBox");
+  if(times.length){
+    const avg=times.reduce((a,b)=>a+b,0)/times.length;
+    const tag=avg<60?'<span class="tag ok">正常</span>':avg<150?'<span class="tag warn">偏慢</span>':'<span class="tag bad">慢</span>';
+    box.innerHTML=`<div class="row"><span>解析+建连耗时(估)</span><b>${avg.toFixed(0)} ms ${tag}</b></div>
+      <div class="muted" style="margin-top:6px">建议系统/路由器 DNS 设为 <b>119.29.29.29（腾讯）</b> 主、<b>114.114.114.114</b> 备，兼顾速度与稳定。</div>`;
+    log(`DNS 解析+建连约 ${avg.toFixed(0)} ms`,avg<60?"ok":"warn");
+  }else{
+    box.innerHTML=`<div class="muted">DNS 检测失败</div>`;
+  }
+}
+
+/* ---------- 饱和 / Bufferbloat ---------- */
+async function idleLatency(){
+  const targets=["https://www.baidu.com","https://www.taobao.com","https://www.qq.com"];
+  const r=await Promise.all(targets.map(probe));
+  const ok=r.filter(x=>x.ok);
+  return ok.length?ok.reduce((a,b)=>a+b.rtt,0)/ok.length:TIMEOUT;
+}
+async function runBufferbloat(){
+  const box=$("bbBox");
+  box.innerHTML='<div class="muted">测量空闲延迟…</div>';
+  let idle=0,n=0;
+  for(let i=0;i<6;i++){const v=await idleLatency(); if(v<TIMEOUT){idle+=v;n++;}}
+  idle=n?idle/n:TIMEOUT;
+  box.innerHTML='<div class="muted">空闲延迟 '+idle.toFixed(0)+'ms，开始下载加压…</div>';
+  let loadedSum=0,loadedN=0;
+  try{
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),35000);
+    const res=await fetch("https://speed.cloudflare.com/__down?bytes=60000000",{cache:"no-store",signal:ctrl.signal});
+    const reader=res.body.getReader();
+    while(true){
+      const {done}=await reader.read();
+      if(done) break;
+      const v=await idleLatency();
+      if(v<TIMEOUT){loadedSum+=v;loadedN++;}
+    }
+    clearTimeout(to);
+  }catch(e){
+    box.innerHTML='<div class="muted">饱和测试下载节点不可达（网络限制），跳过。可用时再测。</div>';
+    log("饱和测试节点不可达，跳过","warn");
+    state.bb=null; return;
+  }
+  const loaded=loadedN?loadedSum/loadedN:TIMEOUT;
+  const delta=loaded-idle;
+  let grade,gcol,gtxt;
+  if(delta<30){grade="A";gcol="var(--ok)";gtxt="优秀：满载几乎不增加延迟，无明显 bufferbloat。";}
+  else if(delta<60){grade="B";gcol="var(--ok)";gtxt="良好：仅有轻微增加。";}
+  else if(delta<120){grade="C";gcol="var(--warn)";gtxt="一般：满载延迟明显上升，存在 bufferbloat 迹象。";}
+  else if(delta<200){grade="D";gcol="var(--warn)";gtxt="较差：满载延迟大幅上升，bufferbloat 明显。";}
+  else {grade="F";gcol="var(--bad)";gtxt="严重：满载延迟剧增，典型 bufferbloat，强烈建议开启路由器 QoS/SQM。";}
+  state.bb={idle,loaded,delta,grade};
+  box.innerHTML=`<div class="row"><span>空闲延迟</span><b>${idle.toFixed(0)} ms</b></div>
+    <div class="row"><span>满载延迟</span><b style="color:${gcol}">${loaded.toFixed(0)} ms</b></div>
+    <div class="row"><span>延迟增量</span><b style="color:${gcol}">+${delta.toFixed(0)} ms</b></div>
+    <div style="margin-top:8px"><span class="tag ${grade==='A'||grade==='B'?'ok':grade==='C'?'warn':'bad'}">评级 ${grade}</span></div>
+    <div class="muted" style="margin-top:6px">${gtxt}</div>`;
+  log(`Bufferbloat 评级 ${grade}：空闲 ${idle.toFixed(0)} / 满载 ${loaded.toFixed(0)}ms (+${delta.toFixed(0)})`,grade==='F'||grade==='D'?"bad":grade==='C'?"warn":"ok");
+}
+
+/* ---------- WebRTC 隐私 / NAT ---------- */
+function stunPublic(stunUrl){
+  return new Promise(resolve=>{
+    let pc;
+    try{pc=new RTCPeerConnection({iceServers:[{urls:stunUrl}]});}catch(e){resolve(null);return;}
+    pc.createDataChannel("x");
+    let addr=null;
+    pc.onicecandidate=e=>{
+      if(!e.candidate) return;
+      const c=e.candidate.candidate;
+      const m=c.match(/(\d+\.\d+\.\d+\.\d+):(\d+)/);
+      const t=c.match(/typ (\w+)/);
+      if(m&&t&&t[1]==="srflx") addr=m[1]+":"+m[2];
+    };
+    pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(()=>{});
+    setTimeout(()=>{try{pc.close();}catch(e){} resolve(addr);},3000);
+  });
+}
+function gatherAll(){
+  return new Promise(resolve=>{
+    const pub=new Set(),loc=new Set();
+    let pc;
+    try{pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});}catch(e){resolve({pub:[],loc:[],err:true});return;}
+    pc.createDataChannel("x");
+    pc.onicecandidate=e=>{
+      if(!e.candidate) return;
+      const c=e.candidate.candidate;
+      const m=c.match(/(\d+\.\d+\.\d+\.\d+)/);
+      if(m){
+        const ip=m[1];
+        if(ip.startsWith("192.168.")||ip.startsWith("10.")||/^172\.(1[6-9]|2\d|3[01])\./.test(ip)||ip.startsWith("169.254.")||ip==="127.0.0.1"||ip.startsWith("100.")) loc.add(ip);
+        else pub.add(ip);
+      }
+    };
+    pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(()=>{});
+    setTimeout(()=>{try{pc.close();}catch(e){} resolve({pub:[...pub],loc:[...loc]});},4000);
+  });
+}
+async function runWebRTC(){
+  const box=$("rtcBox");
+  box.innerHTML='<div class="muted">正在通过 STUN 收集候选地址…</div>';
+  const g=await gatherAll();
+  const a1=await stunPublic("stun:stun.l.google.com:19302");
+  const a2=await stunPublic("stun:stun.cloudflare.com:3478");
+  let nat="未知";
+  if(a1&&a2) nat=(a1===a2)?"锥形 NAT（较宽松）":"对称型 NAT（最严格）";
+  else if(a1||a2) nat="经 NAT（类型未能精确判定）";
+  else nat="未获取到公网反射地址（可能被防火墙拦截）";
+  const leak=(g.pub.length>0);
+  const vpnNote=(state.ipv4 && g.pub.length && !g.pub.includes(state.ipv4))
+      ? "WebRTC 暴露的公网 IP 与页面检测到的不同 → 你可能在使用代理/VPN，且 WebRTC 走的是真实网络（注意隐私）。"
+      : (g.pub.length && state.ipv4 && g.pub.includes(state.ipv4))
+        ? "WebRTC 暴露的公网 IP 与当前出口一致 → 真实 IP 可见（若你期望隐藏，说明 VPN/代理未覆盖 WebRTC）。"
+        : "";
+  state.rtc={pub:g.pub,loc:g.loc,nat,leak};
+  const leakTag=leak?'<span class="tag warn">暴露公网IP</span>':'<span class="tag ok">未暴露</span>';
+  box.innerHTML=`<div class="row"><span>WebRTC 暴露公网 IP</span><b>${g.pub.length?g.pub.join(", "):"无"} ${leakTag}</b></div>
+    <div class="row"><span>内网 IP</span><b>${g.loc.length?g.loc.join(", "):"无"}</b></div>
+    <div class="row"><span>NAT 类型</span><b>${nat}</b></div>
+    <div class="muted" style="margin-top:6px">${vpnNote||"仅你自己的浏览器/网络信息，未触碰任何外部目标。"}</div>`;
+  log(`WebRTC：${leak?"暴露公网IP ":"未暴露公网IP"}+ NAT=${nat}`,leak?"warn":"ok");
+}
+
+/* ---------- 本地服务暴露扫描 ---------- */
+async function scanPort(p){
+  const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),800);
+  try{
+    await fetch("http://127.0.0.1:"+p,{mode:"no-cors",cache:"no-store",signal:ctrl.signal});
+    clearTimeout(to); return true;
+  }catch(e){clearTimeout(to); return false;}
+}
+async function runLocalScan(){
+  const box=$("localBox");
+  box.innerHTML='<div class="muted">扫描本机 127.0.0.1 常见端口…</div>';
+  const PORTS=[[22,"SSH"],[80,"HTTP"],[443,"HTTPS"],[3306,"MySQL"],[5432,"PostgreSQL"],[6379,"Redis"],[8080,"HTTP-Alt"],[8443,"HTTPS-Alt"],[9200,"Elasticsearch"],[27017,"MongoDB"],[3389,"RDP"],[5900,"VNC"],[8888,"Jupyter"],[3000,"Dev"],[5000,"Flask"],[8000,"HTTP"]];
+  const dangerous=new Set([3306,5432,6379,9200,27017,3389,5900,8888]);
+  let open=[],danger=[];
+  for(const pr of PORTS){
+    const ok=await scanPort(pr[0]);
+    if(ok){open.push(pr[1]+"("+pr[0]+")"); if(dangerous.has(pr[0])) danger.push(pr[1]+"("+pr[0]+")");}
+  }
+  state.local={open,danger};
+  if(open.length===0){
+    box.innerHTML='<span class="tag ok">未发现监听端口</span><div class="muted" style="margin-top:6px">本机常见端口均未响应（若页面以 HTTPS 打开，浏览器会禁止访问 http://127.0.0.1，导致本项为空；如需检测请在 http 或 file 协议下打开）。</div>';
+  }else{
+    const dt=danger.length?'<span class="tag bad">危险服务暴露</span>':'<span class="tag ok">无非必要危险服务</span>';
+    box.innerHTML=`<div>${dt}</div>
+      <div class="row" style="margin-top:6px"><span>开放端口</span><b>${open.join("、")}</b></div>
+      ${danger.length?`<div class="muted" style="margin-top:6px">⚠️ 发现潜在危险服务：${danger.join("、")}。若非必要，请在防火墙/服务配置中关闭，避免被局域网或恶意页面利用。</div>`:""}`;
+  }
+  log(`本地扫描：开放 ${open.length} 个端口${danger.length?("，危险："+danger.join(",")):""}`,danger.length?"bad":"ok");
+}
+
+/* ---------- 安全 / 加密姿态 ---------- */
+async function runSecurity(){
+  const box=$("secBox");
+  const secure=!!(window.isSecureContext && location.protocol==="https:");
+  let mixed=0;
+  try{ mixed=performance.getEntriesByType("resource").filter(r=>r.name&&r.name.startsWith("http://")).length; }catch(e){}
+  let doh=false;
+  try{
+    const r=await fetch("https://1.1.1.1/dns-query?name=example.com&type=A",{headers:{"Accept":"application/dns-json"},signal:AbortSignal.timeout(4000)});
+    doh=r.ok;
+  }catch(e){}
+  state.sec={secure,mixed,doh};
+  const secTag=secure?'<span class="tag ok">安全上下文</span>':'<span class="tag warn">非 HTTPS</span>';
+  const mixTag=mixed>0?'<span class="tag bad">'+mixed+' 处混合内容</span>':'<span class="tag ok">无混合内容</span>';
+  const dohTag=doh?'<span class="tag ok">DoH 可达</span>':'<span class="tag warn">DoH 不可达</span>';
+  box.innerHTML=`<div>${secTag} ${mixTag} ${dohTag}</div>
+    <div class="row" style="margin-top:6px"><span>页面协议</span><b>${location.protocol}</b></div>
+    <div class="muted" style="margin-top:6px">${secure?"连接经 TLS 加密，安全。":"当前非 HTTPS，流量易被窃听/劫持。"} DoH 可达仅表示网络支持加密 DNS；浏览器是否启用 DoH 请在浏览器设置中确认。</div>`;
+  log(`安全姿态：secure=${secure} mixed=${mixed} doh=${doh}`,!secure||mixed>0?"warn":"ok");
+}
+
+/* ---------- 连接基线 ---------- */
+function renderConn(){
+  const c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+  if(c){
+    const map={slow2g:"极慢 2G","2g":"2G","3g":"3G","4g":"4G",wifi:"WiFi",ethernet:"有线",cellular:"蜂窝"};
+    $("cType").textContent=(map[c.effectiveType]||c.effectiveType||"未知")
+      +(c.downlink?(" · "+c.downlink+"Mbps"):"")+(c.rtt?(" · RTT≈"+c.rtt+"ms"):"");
+  }else{
+    $("cType").textContent="浏览器未提供（可用）";
+  }
+}
+
+/* ---------- 评分 + 诊断 ---------- */
+function computeScore(){
+  const rs=Object.values(state.results);
+  if(!rs.length) return null;
+  const avgAll=rs.reduce((a,s)=>a+s.avg,0)/rs.length;
+  const jitAll=rs.reduce((a,s)=>a+s.jit,0)/rs.length;
+  const lossAll=rs.reduce((a,s)=>a+s.loss,0)/rs.length;
+  let score=100;
+  score-=Math.max(0,(avgAll-30))*0.4;
+  score-=Math.max(0,(jitAll-10))*0.8;
+  score-=lossAll*1.5;
+  const dl=parseFloat($("dlSpeed").textContent)||0;
+  if(dl && dl<10) score-=15; else if(dl && dl<30) score-=5;
+  if(state.bb){
+    if(state.bb.grade==="F") score-=15;
+    else if(state.bb.grade==="D") score-=10;
+    else if(state.bb.grade==="C") score-=5;
+  }
+  if(state.sec && (!state.sec.secure || state.sec.mixed>0)) score-=3;
+  return {score:Math.max(0,Math.round(score)),avgAll,jitAll,lossAll};
+}
+
+function analyze(){
+  const sc=computeScore();
+  if(!sc){return;}
+  const ring=$("ring");
+  ring.style.setProperty("--v",sc.score);
+  let col=sc.score>=80?"var(--ok)":sc.score>=55?"var(--warn)":"var(--bad)";
+  ring.style.setProperty("--ringc",col);
+  $("scoreNum").textContent=sc.score;
+
+  // 综合判定与建议
+  const sa=syncAnalysis();
+  const avg=sc.avgAll, jit=sc.jitAll, loss=sc.lossAll;
+  const dl=parseFloat($("dlSpeed").textContent)||0;
+  const ul=parseFloat($("ulSpeed").textContent)||0;
+  const items=[];
+  let verdict="网络良好";
+  let level=3;
+
+  // 测速有效性校验（反常校验）：家庭宽带下行通常远高于上行；
+  // 若实测下行 < 上行，强烈提示测速节点/链路异常（节点故障、被限速到单线程等），并非真实网速。
+  if(dl && ul && dl<ul){
+    items.push({lv:1,t:"⚠️ 测速结果反常（下行 < 上行）",p:"实测下载 "+dl.toFixed(1)+" Mbps 竟低于上传 "+ul.toFixed(1)+" Mbps。家庭宽带下行通常远高于上行，此结果强烈提示<b>测速节点/链路异常</b>（测速网站节点故障、被限速到单线程等），并非你家真实网速。请用<b>路由器官方 App 自带测速</b>或运营商测速页（电信/联通/移动宽带管家）重新验证，并以权威源为准。"});
+    level=Math.min(level,1);
+  }
+
+  if(loss>2){
+    items.push({lv:1,t:"检测到明显丢包",p:"多条探测超时（>"+TIMEOUT+"ms）。可能为 WiFi 干扰、路由器过载或运营商链路质量问题。建议：靠近路由器/换 5GHz 信道、重启路由、直连光猫复测。"});
+    verdict="网络异常（丢包）";level=1;
+  }
+  if(sa.ok && sa.ratio>0.25){
+    items.push({lv:1,t:"本地/路由器瓶颈（同步抖动）",p:"多个不同远端在同一时刻一起尖峰，说明瓶颈在本地路径：路由器 CPU/NAT 或 WiFi 调度。最有效的本地手段是在路由器开启 <b>QoS / SQM（智能队列）</b>，能显著缓解 bufferbloat 抖动。"});
+    verdict="本地/路由器瓶颈";level=Math.min(level,1);
+  }else if(jit>JITTER_THRESH){
+    items.push({lv:2,t:"延迟抖动较大",p:"RTT 波动剧烈（抖动 "+jit.toFixed(0)+"ms）。间歇卡顿/缓冲多源于此。优先排查：是否有设备占满带宽（下载/视频通话/NAS 同步），并开启路由器 QoS。"});
+    verdict=verdict==="网络良好"?"延迟抖动偏大":"网络抖动";level=Math.min(level,2);
+  }
+  if(avg>80){
+    items.push({lv:2,t:"基础延迟偏高",p:"平均往返 "+avg.toFixed(0)+"ms，高于家庭宽带正常水平（通常<40ms）。若为 WiFi，尝试靠近路由器；若直连仍高，则可能运营商侧延迟。"});
+    level=Math.min(level,2);
+  }
+  if(dl && dl<10){
+    items.push({lv:2,t:"带宽偏低",p:"实测下载 "+dl.toFixed(1)+" Mbps，低于常见宽带。确认套餐速率、是否被限速、是否有设备抢占带宽。"});
+    level=Math.min(level,2);
+  }
+  if(!state.ipv6){
+    items.push({lv:3,t:"未启用 IPv6（提示）",p:"当前仅 IPv4。IPv4 抖动时无法自动切换，属可选优化项，可在光猫/路由器开启 IPv6 拨号。"});
+  }
+  if(state.bb){
+    if(state.bb.grade==="F"||state.bb.grade==="D"){
+      items.push({lv:1,t:"Bufferbloat 严重（饱和抖动）",p:"下载/上传满载时延迟剧增（空闲 "+state.bb.idle.toFixed(0)+"→满载 "+state.bb.loaded.toFixed(0)+"ms）。这是多人共用或跑大流量时“卡顿/缓冲”的根因。最有效修复：路由器开启 <b>QoS / SQM（智能队列）</b>。"});
+      level=Math.min(level,1);
+    }else if(state.bb.grade==="C"){
+      items.push({lv:2,t:"存在 Bufferbloat 迹象",p:"满载延迟上升（+"+state.bb.delta.toFixed(0)+"ms）。高负载时易卡顿，建议开启路由器 QoS/SQM。"});
+      level=Math.min(level,2);
+    }
+  }
+  if(state.local && state.local.danger && state.local.danger.length){
+    items.push({lv:1,t:"本机暴露危险服务",p:"检测到本机开放："+state.local.danger.join("、")+"。若非必要，请在防火墙/服务配置中关闭，避免被局域网或恶意页面利用。"});
+    level=Math.min(level,1);
+  }
+  if(state.sec && (!state.sec.secure || state.sec.mixed>0)){
+    items.push({lv:2,t:"连接安全姿态不足",p:(!state.sec.secure?"当前页面非 HTTPS，流量可被窃听。":"")+(state.sec.mixed>0?("存在 "+state.sec.mixed+" 处混合内容。"):"")+"建议使用 HTTPS 并启用 DoH 加密 DNS。"});
+    level=Math.min(level,2);
+  }
+  if(state.rtc && state.rtc.leak){
+    items.push({lv:3,t:"WebRTC 暴露真实公网 IP",p:"浏览器经 WebRTC 暴露了你的公网 IP（"+(state.rtc.pub.join(", "))+"）。若你期望通过代理/VPN 隐藏真实 IP，需在浏览器禁用 WebRTC 或使用防泄漏扩展。"});
+  }
+  if(items.length===0){
+    items.push({lv:3,t:"各项指标正常",p:"延迟、抖动、丢包、网速均在健康范围。如仍感觉偶发卡顿，多为间歇性瞬时抖动，可开启下方「持续监控」捕捉发生时刻。"});
+  }
+
+  const box=$("diagBox");
+  box.innerHTML=items.map(it=>`<div class="item lv${it.lv}"><h3>${it.lv===1?"🔴":it.lv===2?"🟠":"🟢"} ${it.t}</h3><p>${it.p}</p></div>`).join("");
+  $("verdict").textContent=verdict;
+  $("verdict").style.color=col;
+
+  // 自主处置清单（本机 + 路由器 + 运营商三层）
+  const list=[
+    "✅ 已在本页提供：清理浏览器缓存按钮（点上方「🧹 清理浏览器缓存」）。",
+    "🔧 重启光猫 + 路由器：清除 NAT 会话/内存泄漏，多数间歇性抽风可解决。",
+    "🔧 排查占带宽设备：NAS 同步、大文件下载、视频通话、家人设备大流量最易触发抖动。",
+    "🔧 直连光猫复测：网线直连光猫再点「重新检测」，抖动消失→问题在路由器；仍在→在运营商。",
+    "🔧 路由器开启 QoS / SQM（智能队列）：缓解 bufferbloat 与同步抖动最有效的本地手段。",
+    "📞 若直连光猫仍抖：报修运营商，描述为「延迟抖动大、有尖峰、不丢包」更易受理。",
+    "🌐 DNS：路由器改为主 119.29.29.29、备 114.114.114.114（让全家生效）。"
+  ];
+  if(state.local && state.local.danger && state.local.danger.length)
+    list.push("🔒 关闭本机危险服务："+state.local.danger.join("、")+"（在防火墙/服务配置中禁用）。");
+  if(state.sec && !state.sec.secure)
+    list.push("🔒 以 HTTPS 访问本工具，并在浏览器启用 DoH（加密 DNS）以防劫持。");
+  if(state.rtc && state.rtc.leak)
+    list.push("🕵️ 若需隐藏真实 IP：在浏览器禁用 WebRTC 或安装防泄漏扩展。");
+  $("checklist").innerHTML=list.map(t=>`<li>${t}</li>`).join("");
+
+  // 评分日志
+  log(`综合评分 ${sc.score}/100，判定：${verdict}`,level===1?"bad":level===2?"warn":"ok");
+}
+
+/* ---------- 浏览器缓存清理（本机可自主执行） ---------- */
+async function clearCache(){
+  try{
+    if("caches" in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+      log(`已清理 ${keys.length} 个 Cache Storage 缓存`,"ok");
+    }else log("当前浏览器不支持 Cache API","warn");
+    // 尝试清理可能堆积的 service worker 缓存
+    if("serviceWorker" in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      regs.forEach(r=>r.unregister());
+    }
+    alert("浏览器端缓存已尝试清理。\n注意：DNS 缓存、路由器缓存需在系统/路由器侧处理（见诊断清单）。");
+  }catch(e){log("清理缓存失败："+e.message,"bad");}
+}
+
+/* ---------- 持续监控 ---------- */
+async function monitorTick(){
+  for(let r=0;r<MON_ROUNDS;r++) await round();
+  drawChart();
+  EP.forEach(e=>state.results[e.name]=stats(state.hist[e.name]));
+  renderLatTable();
+  analyze();
+  const sc=computeScore();
+  if(sc && sc.jitAll>JITTER_THRESH){
+    log(`⚠️ 监控告警：当前抖动 ${sc.jitAll.toFixed(0)}ms 超阈值`,"bad");
+  }
+}
+
+function toggleMonitor(){
+  state.monitor=!state.monitor;
+  const b=$("btnMonitor");
+  if(state.monitor){
+    b.classList.add("on");b.textContent="🔁 持续监控：开 (每60s)";
+    log("开启持续监控，每 60 秒采样一次");
+    state.monitorTimer=setInterval(monitorTick,60000);
+    monitorTick();
+  }else{
+    b.classList.remove("on");b.textContent="🔁 持续监控：关";
+    clearInterval(state.monitorTimer);
+    log("已关闭持续监控");
+  }
+}
+
+/* ---------- 报告导出 ---------- */
+function exportReport(){
+  const sc=computeScore();
+  const sa=syncAnalysis();
+  let txt="==== 家庭网络自检报告 ====\n";
+  txt+="时间："+new Date().toLocaleString("zh-CN")+"\n";
+  txt+="公网 IPv4："+(state.ipv4||"未获取")+"\n";
+  txt+="公网 IPv6："+(state.ipv6||"未获取")+"\n";
+  txt+="综合评分："+(sc?sc.score:"--")+"/100\n";
+  if(sc) txt+=`平均延迟 ${sc.avgAll.toFixed(0)}ms / 抖动 ${sc.jitAll.toFixed(0)}ms / 丢包 ${sc.lossAll.toFixed(0)}%\n`;
+  if(sa.ok) txt+=`同步抖动比例：${(sa.ratio*100).toFixed(0)}%\n`;
+  txt+="\n-- 各节点 --\n";
+  EP.forEach(e=>{const s=state.results[e.name];if(s)txt+=`${e.name}: avg ${s.avg.toFixed(0)} / min ${s.min.toFixed(0)} / max ${s.max.toFixed(0)} / jit ${s.jit.toFixed(0)} / loss ${s.loss.toFixed(0)}%\n`;});
+  if(state.bb) txt+=`\n-- Bufferbloat --\n空闲 ${state.bb.idle.toFixed(0)}ms / 满载 ${state.bb.loaded.toFixed(0)}ms / 增量 +${state.bb.delta.toFixed(0)}ms / 评级 ${state.bb.grade}\n`;
+  if(state.rtc) txt+=`\n-- WebRTC / NAT --\n公网IP ${state.rtc.pub.join(",")||"无"} / 内网IP ${state.rtc.loc.join(",")||"无"} / NAT ${state.rtc.nat}\n`;
+  if(state.local) txt+=`\n-- 本地服务 --\n开放 ${state.local.open.join(",")||"无"}${state.local.danger.length?(" / 危险 "+state.local.danger.join(",")):""}\n`;
+  if(state.sec) txt+=`\n-- 安全姿态 --\nHTTPS安全上下文 ${state.sec.secure} / 混合内容 ${state.sec.mixed} / DoH可达 ${state.sec.doh}\n`;
+  txt+="\n-- 修复建议（见网页诊断区）--\n";
+  const lis=$("checklist").querySelectorAll("li");
+  lis.forEach(li=>txt+="• "+li.textContent+"\n");
+  const blob=new Blob([txt],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="network-report-"+Date.now()+".txt";
+  a.click();
+  log("已导出诊断报告");
+}
+
+/* ---------- 复制本页链接（保留全部查询参数，域名/路径自适应）---------- */
+function copyPageLink(){
+  const link = SELF.url();                 // 含当前全部参数的本页地址
+  const done = ()=>log("已复制本页链接（含全部参数）："+link,"ok");
+  const fallback = ()=>{
+    const ta=document.createElement("textarea");
+    ta.value=link; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }
+    catch(e){ log("复制失败，请手动复制："+link,"bad"); }
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(link).then(done, fallback);
+  }else fallback();
+}
+
+/* ---------- Clash 安全检测 ---------- */
+function clashItem(addr,tagCls,tagText,detail){
+  return `<div class="clash-item"><div class="head"><span class="addr">${addr}</span><span class="tag ${tagCls}">${tagText}</span></div><div class="muted" style="margin-top:5px">${detail}</div></div>`;
+}
+async function clashProbe(base){
+  const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),3000);
+  const out={reachable:false,version:null,proxiesOpen:false,needsAuth:false,err:null};
+  try{
+    const vRes=await fetch(base+"/version",{mode:"cors",cache:"no-store",signal:ctrl.signal});
+    out.reachable=true;
+    if(vRes.ok){ try{ out.version=(await vRes.json()).version||"(未知)"; }catch(_){} }
+    const pRes=await fetch(base+"/proxies",{mode:"cors",cache:"no-store",signal:ctrl.signal});
+    if(pRes.ok) out.proxiesOpen=true;
+    else if(pRes.status===401||pRes.status===403) out.needsAuth=true;
+  }catch(e){
+    if(e.name==="AbortError") out.err="连接超时(3s)";
+    else out.err=(e&&e.message)||"连接失败";
+  }finally{ clearTimeout(to); }
+  return out;
+}
+async function runClashLocal(){
+  const host=($("clashHost").value||"127.0.0.1").trim();
+  const ports=($("clashPorts").value||"").split(",").map(s=>s.trim()).filter(s=>/^\d+$/.test(s));
+  const box=$("clashLocalBox");
+  if(!ports.length){ box.innerHTML='<span class="tag bad">请填写有效端口</span>'; return; }
+  $("btnClashLocal").disabled=true;$("btnClashLocal").textContent="检测中…";
+  box.innerHTML='<div class="muted">正在检测 '+host+' 的 '+ports.length+' 个端口…</div>';
+  let danger=0,ok=0,warn=0,safe=0,html="";
+  for(const port of ports){
+    const base=`http://${host}:${port}`;
+    const r=await clashProbe(base);
+    if(!r.reachable){
+      safe++;
+      html+=clashItem(base,"muted","未暴露", r.err?("该地址无可用的 Clash 控制 API（"+r.err+"）"):"该地址无可用的 Clash 控制 API。");
+    }else if(r.proxiesOpen){
+      danger++;
+      html+=clashItem(base,"bad","高危·无密钥可读","控制端口开放且未设 secret，本地任意网页可读取你的代理节点与连接信息"+(r.version?("（核心 "+r.version+"）"):"")+"。建议立即加固。");
+    }else if(r.needsAuth){
+      ok++;
+      html+=clashItem(base,"ok","已保护·需密钥","控制端口开放但访问敏感接口需要 secret 鉴权，本地网页无法越权读取"+(r.version?("（核心 "+r.version+"）"):"")+"。配置较安全。");
+    }else{
+      warn++;
+      html+=clashItem(base,"warn","需注意","端口可达但敏感接口受限"+(r.version?("（核心 "+r.version+"）"):"")+"，请结合密钥设置确认。");
+    }
+  }
+  box.innerHTML=html;
+  let summary;
+  if(danger>0) summary=`<div class="row" style="margin-top:8px"><span>结论</span><b style="color:var(--bad)">🔴 ${danger} 个高危端口无密钥可读</b></div><div class="muted" style="margin-top:6px">请设置 secret、仅监听 127.0.0.1、换高位端口、升级核心版本。</div>`;
+  else if(ok>0) summary=`<div class="row" style="margin-top:8px"><span>结论</span><b style="color:var(--ok)">🟢 已设密钥保护</b></div>`;
+  else summary=`<div class="row" style="margin-top:8px"><span>结论</span><b style="color:var(--ok)">🟢 未检测到开放控制 API</b></div>`;
+  box.insertAdjacentHTML("beforeend",summary);
+  if(safe===ports.length && location.protocol==="https:"){
+    box.insertAdjacentHTML("beforeend",'<div class="muted" style="margin-top:6px">提示：当前为 HTTPS 页面，浏览器可能拦截了对 127.0.0.1 的明文请求。若你确认 Clash 正在运行却全部「未暴露」，请用 http:// 或 file:// 协议打开本页再测。</div>');
+  }
+  log(`Clash 本地检测：高危 ${danger} / 需密钥 ${ok} / 需注意 ${warn} / 未暴露 ${safe}`,danger>0?"bad":"ok");
+  $("btnClashLocal").disabled=false;$("btnClashLocal").textContent="重新检测";
+}
+function setupClashLinks(){
+  const q='body="\\"hello\\":\\"mihomo\\"" || body="\\"hello\\":\\"clash\\""';
+  $("linkFofa").href="https://fofa.info/result?qbase64="+btoa(q);
+  $("linkShodan").href="https://www.shodan.io/search?query=port%3A9090%2C9097";
+  $("linkZoom").href="https://www.zoomeye.org/searchResult?q=port%3A%229090%22%2C%229097%22";
+}
+
+/* ---------- 绑定 ---------- */
+$("btnRun").onclick=fullCheck;
+$("btnMonitor").onclick=toggleMonitor;
+$("btnCache").onclick=clearCache;
+$("btnReport").onclick=exportReport;
+$("btnCopyLink").onclick=copyPageLink;
+$("btnClashLocal").onclick=runClashLocal;
+setupClashLinks();
+
+renderConn();
+resize();
+log("就绪。点击「开始全面检测」进行全面扫描，或开启「持续监控」长期盯梢网络抖动。");
+</script>
+</body>
+</html>

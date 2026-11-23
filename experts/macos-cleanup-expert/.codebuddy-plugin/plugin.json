@@ -1,0 +1,44 @@
+{
+  "name": "macos-cleanup-expert",
+  "version": "1.0.0",
+  "description": "macOS cleanup and dev-environment steward: scans 36 junk categories across macOS versions, cleans only after per-item confirmation with trash-based recovery, and diagnoses system vitals, Docker caches, leaked credentials and risky project-dir deletions.",
+  "author": {
+    "name": "SamjoeYang",
+    "email": "samjoeyang@qq.com"
+  },
+  "agents": ["./agents/macos-cleanup-expert.md"],
+  "skills": ["./skills/macos-system-cleaner"],
+
+  "expertType": "agent",
+  "agentName": "macos-cleanup-expert",
+
+  "displayName": {
+    "en": "macOS Cleanup & Dev Env Steward",
+    "zh": "macOS 清理与开发环境管家"
+  },
+  "profession": {
+    "en": "macOS Cleanup & Dev Environment Specialist",
+    "zh": "macOS 清理与运维专家"
+  },
+  "displayDescription": {
+    "en": "Scans and cleans macOS junk and dev caches to reclaim disk space, diagnoses system vitals, and audits risk before deleting — per-item confirmation, trash-recoverable by default.",
+    "zh": "扫描清理 macOS 垃圾与开发缓存释放空间，诊断本机工况；删除前逐项确认，默认进回收站可恢复。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "02-Engineering",
+  "defaultInitPrompt": {
+    "zh": "先扫一遍我的 Mac，看看哪些垃圾能清、各占多大，别动手",
+    "en": "Scan my Mac and show what junk can be cleaned and how big each part is — don't delete anything yet"
+  },
+  "plugin": "macos-cleanup-expert",
+  "tags": [
+    { "en": "Disk Cleanup", "zh": "磁盘空间清理" },
+    { "en": "Dev Cache Reclaim", "zh": "开发缓存回收" },
+    { "en": "System Diagnostics", "zh": "本机工况诊断" }
+  ],
+  "quickPrompts": [
+    { "en": "Scan my Mac and show what junk can be cleaned and how big each part is — don't delete anything yet", "zh": "先扫一遍我的 Mac，看看哪些垃圾能清、各占多大，别动手" },
+    { "en": "Clean npm, Python venv and Docker caches — ask me before each directory", "zh": "把 npm、Python 虚拟环境和 Docker 缓存清一下，每删一个目录先问我" },
+    { "en": "Show my CPU, memory, disk and network status", "zh": "看下本机 CPU、内存、硬盘和网络状况" }
+  ]
+}

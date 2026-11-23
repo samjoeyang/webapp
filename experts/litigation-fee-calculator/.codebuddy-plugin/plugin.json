@@ -1,0 +1,44 @@
+{
+  "name": "litigation-fee-calculator",
+  "version": "1.0.0",
+  "description": "Litigation cost calculator expert: computes Chinese court statutory fees (acceptance + application) and estimates lawyer, notary, appraisal, evaluation, auction, announcement, translation and travel costs across all case types, split into statutory and estimated layers.",
+  "author": {
+    "name": "SamjoeYang",
+    "email": "samjoeyang@qq.com"
+  },
+  "agents": ["./agents/litigation-fee-calculator.md"],
+  "skills": ["./skills/litigation-fee-calculator"],
+
+  "expertType": "agent",
+  "agentName": "litigation-fee-calculator",
+
+  "displayName": {
+    "en": "Litigation Fee Calculator",
+    "zh": "诉讼费用计算器"
+  },
+  "profession": {
+    "en": "Litigation Cost Estimation Expert",
+    "zh": "诉讼费用测算专家"
+  },
+  "displayDescription": {
+    "en": "Computes court statutory fees and estimates full litigation-related costs (lawyer, notary, appraisal, etc.) across all case types, with statutory vs estimated split.",
+    "zh": "测算法院法定诉讼费与律师、公证、鉴定等全部维权成本，覆盖各类案件，区分法定与估算两层。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "11-SecurityCompliance",
+  "defaultInitPrompt": {
+    "zh": "帮我算一下：知识产权维权案件，诉讼标的50万，大概要花多少费用",
+    "en": "Estimate the total cost for an IP enforcement case with a 500,000 claim amount"
+  },
+  "plugin": "litigation-fee-calculator",
+  "tags": [
+    { "en": "Court Fee Calculation", "zh": "诉讼费计算" },
+    { "en": "Litigation Cost Estimation", "zh": "维权成本估算" },
+    { "en": "IP Enforcement Budget", "zh": "知识产权维权预算" }
+  ],
+  "quickPrompts": [
+    { "en": "Estimate the total cost for an IP enforcement case with a 500,000 claim amount", "zh": "帮我算一下：知识产权维权案件，诉讼标的50万，大概要花多少费用" },
+    { "en": "How much are the court acceptance fees for a 1 million property case?", "zh": "财产案件标的100万，法院受理费要交多少" },
+    { "en": "What does a full lawsuit cost: filing + preservation + execution + lawyer?", "zh": "打一场官司全流程要花多少：起诉+保全+执行+请律师" }
+  ]
+}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>朕知道了 门户 · 网页应用 / 桌面端应用 / Skill / API 接口</title>
+  <meta name="description" content="朕知道了 一站式入口：网页应用（司法资源工具、行程规划、会议签到、家庭网络诊断、Excel 处理、电子书阅读器、短链生成、KV 管理后台等）、桌面端应用（SwitchKit for macOS、跨平台私有即时通讯 unobox）、可一键安装的 Skill（微信附件整理、文档审校、反偷拍扫描、知识产权维权全链路、macOS 清理维护等）、以及支持 CORS 的后端接口。点 Skill 卡片即复制安装提示词，从本站 URL 直接安装。" />
+  <meta name="keywords" content="朕知道了,网页应用,桌面端应用,SwitchKit,unobox,Skill,技能安装,Agent,API 接口,接口文档,工具集" />
+  <meta name="author" content="朕知道了" />
+  <meta name="robots" content="index,follow" />
+  <meta name="theme-color" content="#3b5bdb" />
+  <meta name="color-scheme" content="light" />
+
+  <!-- 图标：内联 SVG，免额外文件，避免 404 -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233b5bdb'/%3E%3Ctext x='32' y='45' font-family='-apple-system,Segoe UI,sans-serif' font-size='34' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EU%3C/text%3E%3C/svg%3E" />
+
+  <!-- 分享卡片（微信/飞书/Slack 等取 og:*，X 取 twitter:*） -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="朕知道了 门户" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="朕知道了 门户 · 网页应用 / 桌面端应用 / Skill / API 接口" />
+  <meta property="og:description" content="网页应用、桌面端应用、可一键安装的 Skill、支持 CORS 的后端接口，一个入口全找到。点 Skill 卡片复制安装提示词即可安装。" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="朕知道了 门户 · 网页应用 / 桌面端应用 / Skill / API 接口" />
+  <meta name="twitter:description" content="网页应用、桌面端应用、可一键安装的 Skill、支持 CORS 的后端接口，一个入口全找到。" />
+
+  <!-- schema.org 结构化数据：网站 + 发布者 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://webapp.zhenzhidaole.com/#website",
+        "url": "https://webapp.zhenzhidaole.com/",
+        "name": "朕知道了 应用与接口门户",
+        "alternateName": "朕知道了 门户",
+        "description": "朕知道了 一站式入口：网页应用、桌面端应用、可一键安装的 AI Skill 与支持 CORS 的后端 API 接口。点 Skill 卡片即复制安装提示词，从本站 URL 直接安装。",
+        "inLanguage": "zh-CN",
+        "publisher": { "@id": "https://webapp.zhenzhidaole.com/#organization" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://webapp.zhenzhidaole.com/#organization",
+        "name": "朕知道了",
+        "url": "https://webapp.zhenzhidaole.com/",
+        "alternateName": "朕知道了 应用与接口门户",
+        "description": "聚合网页应用、桌面端应用、AI Skill 与后端 API 接口的开放工具与接口集合。",
+        "sameAs": ["https://zhenzhidaole.com"],
+        "department": {
+          "@type": "Organization",
+          "name": "朕知道了",
+          "description": "朕知道了 门户的运营与维护方"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KTG4EQ5JGS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KTG4EQ5JGS');
+  </script>
+</head>
+<body>
+  <div id="root">
+    <!-- 首屏占位：React 首次渲染会清空 #root 内既有内容，此处不会残留 -->
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f6f8fb;color:#6b7785;font:15px/1.6 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+      正在加载 朕知道了 门户…
+    </div>
+    <noscript>
+      <div style="max-width:720px;margin:0 auto;padding:48px 20px;background:#f6f8fb;color:#1f2733;font:16px/1.8 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+        <h1 style="font-size:22px;margin:0 0 12px">朕知道了 门户</h1>
+        <p style="margin:0 0 16px">这个页面需要 JavaScript 才能展示内容清单。请开启 JavaScript 后刷新。</p>
+        <p style="margin:0;color:#6b7785">直接访问：Skill 安装地址为 <code>skills/&lt;slug&gt;/SKILL.md</code>；后端接口文档见 <code>../utils_api/API.md</code>。</p>
+      </div>
+    </noscript>
+  </div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

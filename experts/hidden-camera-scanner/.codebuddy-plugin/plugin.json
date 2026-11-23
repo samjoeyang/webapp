@@ -1,0 +1,44 @@
+{
+  "name": "hidden-camera-scanner",
+  "version": "1.0.0",
+  "description": "Anti-hidden-camera & suspicious-device scanner: scans Wi-Fi/LAN and Bluetooth to detect covert cameras, surveillance NVRs and unknown trackers (AirTag/SmartTag/Tile etc.), and produces a plain-language risk report.",
+  "author": {
+    "name": "SamjoeYang",
+    "email": "samjoeyang@qq.com"
+  },
+  "agents": ["./agents/hidden-camera-scanner.md"],
+  "skills": ["./skills/hidden-camera-scanner"],
+
+  "expertType": "agent",
+  "agentName": "hidden-camera-scanner",
+
+  "displayName": {
+    "en": "Hidden Camera & Suspicious Device Scanner",
+    "zh": "反偷拍与可疑设备扫描"
+  },
+  "profession": {
+    "en": "Privacy & Surveillance Detection Expert",
+    "zh": "隐私安全排查专家"
+  },
+  "displayDescription": {
+    "en": "Scans Wi-Fi/LAN and Bluetooth to detect hidden cameras, surveillance NVRs and unknown trackers, then delivers a plain-language, compliance-only risk report with phone security check and forensics guidance.",
+    "zh": "扫描局域网与蓝牙，发现隐藏摄像头、监控与不明追踪器，生成普通人能看懂的合规风险报告。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "11-SecurityCompliance",
+  "defaultInitPrompt": {
+    "zh": "帮我扫描一下这个网络，看看有没有隐藏摄像头或监控设备",
+    "en": "Scan this network for hidden cameras or surveillance devices"
+  },
+  "plugin": "hidden-camera-scanner",
+  "tags": [
+    { "en": "Hidden Camera Detection", "zh": "反偷拍排查" },
+    { "en": "BLE Tracker Detection", "zh": "蓝牙追踪器识别" },
+    { "en": "Privacy Risk Report", "zh": "隐私安全报告" }
+  ],
+  "quickPrompts": [
+    { "en": "Scan this network for hidden cameras or surveillance devices", "zh": "帮我扫描一下这个网络，看看有没有隐藏摄像头或监控设备" },
+    { "en": "Check if there is a tracker like AirTag following me", "zh": "检测一下我周围有没有 AirTag 之类的追踪器" },
+    { "en": "I want to run a phone security check or preserve evidence", "zh": "我想在手机上做安全自查，或者固定维权证据" }
+  ]
+}

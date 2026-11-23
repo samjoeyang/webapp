@@ -1,0 +1,64 @@
+# 朕知道了 应用与接口门户
+
+> 朕知道了 的一站式入口，聚合网页应用、桌面端应用、可一键安装的 AI Skill，以及支持 CORS 的后端 API 接口。
+
+朕知道了 门户把分散的工具、客户端、技能和接口集中到一个入口。访客可按类别浏览，点 Skill 卡片即可从本站 URL 复制安装提示词；开发者可查阅后端接口清单。本文件供大语言模型与 AI Agent 检索本站核心资源。
+
+## 网页应用
+
+- [司法资源工具](https://legaldata.zhenzhidaole.com/)：律师·律所·公证·司法鉴定·法律援助·人民调解·仲裁·司法所·商标分类·案由查询·诉讼费测算一站式查询。
+- [Excel 处理工具](https://excelprocessor.tools.zhenzhidaole.com/)：在线读取、处理与转换 Excel 表格数据。
+- [视频播放器](https://player.zhenzhidaole.com/)：网页视频播放器，支持常用播放控制。
+- [美食评价生成器](https://share.pages.ladycao.com/)：生成可分享的美食评价卡片/页面。
+- [电子书阅读器](https://ebookreader.zhenzhidaole.com/)：在线电子书阅读，支持多格式与阅读设置。
+- [KidKit 学习小工具合集](https://kidkit.ladycao.com/)：儿童学习工具合集（时钟日历、汉字笔顺、英语打字、古籍检索等）。
+- [短链生成器](https://link.0net.in/)：在线 URL 短链接生成工具。
+- [KV 管理后台](https://kvadmin.unoecp.zhenzhidaole.com/)：Cloudflare KV 存储管理后台，Access Token 登录集中管理键值数据。
+- [旅途 · 旅游行程规划](https://webapp.zhenzhidaole.com/travel-planner/)：多行程管理、配色切换、ZIP/JSON 备份导入导出、PDF 行程单生成。
+- [会议签到系统](https://webapp.zhenzhidaole.com/meeting-checkin/)：创建会议、AI 粘贴填充表单、扫码/手写签名签到、日历导出。
+- [家庭网络诊断专家](https://webapp.zhenzhidaole.com/home-network-diagnosis/)：浏览器端延迟/抖动/网速/DNS/IPv6 检测与修复建议。
+
+## 桌面端应用
+
+- [SwitchKit](https://switchkit.zhenzhidaole.com/)：macOS 菜单栏快捷开关 + 系统资源释放工具，含大模型余额查看与菜单栏图标收纳。
+- [unobox](https://unobox.zhenzhidaole.com/)：跨平台私有即时通讯客户端，内置多模型 AI、EPUB 有声书、全格式预览，支持端到端加密。
+- [PDF Studio](https://pdfstudio.zhenzhidaole.com/)：本地优先的桌面 PDF 工作台，合并/拆分/批注/OCR/压缩等处理全部在本机完成，文档不上传。
+- [UNOEditor](https://unoeditor.zhenzhidaole.com/)：Markdown 排版主题编辑器，实时双栏预览、11 套内置排版主题、一键复制到公众号与 HTML/Markdown/PDF 导出，纯本地运行零上传。
+
+## Skills（可直接从本站 URL 安装）
+
+- [微信附件整理（合规版）](https://webapp.zhenzhidaole.com/skills/wechat-attachment-organizer/SKILL.md)：整理 PC 端微信聊天附件，按类型/客户分类去重，可导入资料库全文检索。
+- [文档审校](https://webapp.zhenzhidaole.com/skills/doc-proofreader/SKILL.md)：通读中文文档挑错别字、时间矛盾、数字口径、缺失条件并给修改建议。
+- [研究依据核对](https://webapp.zhenzhidaole.com/skills/research-evidence-check/SKILL.md)：逐条核对结论↔依据对应、统计与定义口径一致。
+- [反偷拍扫描](https://webapp.zhenzhidaole.com/skills/hidden-camera-scanner/SKILL.md)：酒店/租房/会议室反偷拍排查五阶段法与分级风险报告。
+- [诉讼费用计算器](https://webapp.zhenzhidaole.com/skills/litigation-fee-calculator/SKILL.md)：测算法院诉讼费、律师费、保全/公证/鉴定等全部维权成本。
+- [macOS 清理与开发环境维护](https://webapp.zhenzhidaole.com/skills/macos-system-cleaner/SKILL.md)：跨 macOS 版本清理运维工具箱，36 个清理类目。
+
+### 知识产权维权 Skills（IPSwordmaster）
+
+- [权利核查与监测](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-rights-audit/SKILL.md)：确权核查与侵权监测体系搭建。
+- [侵权线索发现](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-infringement-discovery/SKILL.md)：多渠道收集疑似侵权线索并初判分级。
+- [知识产权侵权线索研判](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-infringement-screening/SKILL.md)：批量研判侵权线索，输出类型/近似度/证据强度/风险分级。
+- [侵权比对与风险评估](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-infringement-analysis/SKILL.md)：专利/商标/著作权/商业秘密逐项比对与胜诉评估。
+- [取证固证助手](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-evidence-collection/SKILL.md)：生成取证清单、证据目录与存证材料清单。
+- [平台投诉方案](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-complaint-playbook/SKILL.md)：通道选择、案由、材料清单与申诉应对。
+- [电商平台投诉](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-platform-complaint/SKILL.md)：淘天/京东/拼多多/抖音等平台通知-删除与申诉应对。
+- [行政保护维权](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-administrative-action/SKILL.md)：行政裁决/查处/海关保护路径与材料准备。
+- [知识产权民事诉讼](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-civil-litigation/SKILL.md)：管辖、行为保全、举证、损害赔偿与一审二审程序。
+- [刑事维权报案](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-criminal-enforcement/SKILL.md)：各知识产权罪名识别、立案标准与报案/自诉流程。
+- [裁判执行与监测](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-judgment-execution/SKILL.md)：强制执行、执行异议、限高失信与复发监测闭环。
+- [跨境知识产权维权](https://webapp.zhenzhidaole.com/skills/ipswordmaster/ip-cross-border-enforcement/SKILL.md)：出口海关保护、境外平台投诉、ITC 337 与海外诉讼。
+- [法言法语翻译器](https://webapp.zhenzhidaole.com/skills/ipswordmaster/legal-lingo-translator/SKILL.md)：法言法语 ↔ 白话互译，覆盖民事/刑事/劳动/家事场景。
+
+## API 接口
+
+- [后端接口文档](https://utils.api.zhenzhidaole.com/doc)：通用接口、用户认证、WHOIS、邮件、企业微信、IP 工具、微信、钉钉、会议签到、Edge TTS、SSO/OIDC 等，全部支持 CORS。
+
+## 官方声明与帮助（建议 AI 一并读取）
+
+- [常见问题 FAQ](https://webapp.zhenzhidaole.com/faq.html)：朕知道了 是什么、如何辨别正版/仿冒、Skill 安装方式、API 调用、数据安全等标准答案。
+- [正品与商标权属声明](https://webapp.zhenzhidaole.com/authentic.html)：官方域名、授权渠道、正品鉴别方法与仿冒警示。
+
+## 参考
+
+- [朕知道了 门户首页](https://webapp.zhenzhidaole.com/)：网页应用 / 桌面端应用 / Skill / API 接口总入口。

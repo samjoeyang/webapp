@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEO 生成式引擎优化 · 完整培训资料</title>
+<style>
+  :root{ --ink:#1a1a1a; --sub:#555; --line:#e2e2e2; --brand:#0b5fa5; --brandbg:#eef5fb;
+    --warnbg:#fff7e6; --warntx:#8a5a00; --ok:#1f7a3d; --code:#f4f4f4; --toc:#f8fafc; }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);
+    line-height:1.7;margin:0;padding:0;background:#fafafa;}
+  .wrap{max-width:900px;margin:0 auto;background:#fff;padding:48px 60px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  h1{font-size:28px;margin:0 0 6px;letter-spacing:.5px;}
+  h2{font-size:21px;margin:42px 0 14px;padding:10px 12px;background:var(--brandbg);border-radius:6px;color:#0a4d86;}
+  h3{font-size:16px;margin:24px 0 8px;color:var(--brand);border-left:3px solid var(--brand);padding-left:8px;}
+  h4{font-size:14px;margin:16px 0 6px;color:#333;}
+  p,li{font-size:14px;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--brandbg);font-weight:600;}
+  code{background:var(--code);padding:1px 5px;border-radius:3px;font-size:12.5px;}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:6px;padding:14px 16px;overflow:auto;font-size:12.5px;}
+  pre code{background:none;padding:0;}
+  .box{border:1px solid var(--line);border-left:4px solid var(--brand);background:var(--brandbg);padding:12px 16px;border-radius:4px;margin:16px 0;font-size:13.5px;}
+  .warn{border-left-color:#e0a800;background:var(--warnbg);color:var(--warntx);}
+  .key{border-left-color:var(--ok);background:#eef9f1;}
+  .toc{background:var(--toc);border:1px solid var(--line);border-radius:8px;padding:20px 28px;margin:24px 0;}
+  .toc h3{margin-top:0;border:none;padding:0;color:#0a4d86;}
+  .toc ol{margin:8px 0 0;padding-left:22px;}
+  .toc li{margin:5px 0;font-size:13.5px;}
+  .toc a{color:var(--brand);text-decoration:none;}
+  .toc a:hover{text-decoration:underline;}
+  .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:#eee;color:#444;margin-right:4px;}
+  .tag.must{background:#fde8e8;color:#b42318;}
+  .tag.opt{background:#e7f3ea;color:var(--ok);}
+  .meta{color:var(--sub);font-size:13px;}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--sub);}
+  .pill{font-weight:600;color:var(--brand);}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media print{body{background:#fff;}.wrap{box-shadow:none;max-width:none;padding:24px;}.toc{break-inside:avoid;}}
+  @media(max-width:680px){.wrap{padding:24px;}.twocol{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>GEO 生成式引擎优化 · 完整培训资料</h1>
+<p class="meta">从概念到落地 —— AI 时代的品牌推广新战场 ｜ 编写日期：2026-11-02 ｜ 信息时效：截至 2026 年 11 月，产品行为与价格以官方实时为准</p>
+<div class="box">
+<b>适用对象：</b>品牌市场团队、IP 维权从业者、独立创业者（OPC）。本资料基于一次完整的客户咨询对话整理，覆盖"是什么 → 为什么 → 怎么做 → 踩哪些坑 → 单人能否干 → 实战维权案例"全链路。
+</div>
+
+<div class="toc">
+<h3>目录</h3>
+<ol>
+<li><a href="#c1">认知：什么是 GEO（一句话 + 通俗类比）</a></li>
+<li><a href="#c2">为什么现在要做（用户行为变迁）</a></li>
+<li><a href="#c3">市场格局（海外 / 国内代表产品）</a></li>
+<li><a href="#c4">原理：AI 怎么生成答案（记忆 vs 检索）</a></li>
+<li><a href="#c5">实施方法论（四层 + 五步法）</a></li>
+<li><a href="#c6">信源建设（核心执行动作）</a></li>
+<li><a href="#c7">官网 AI 友好化（技术落地）</a></li>
+<li><a href="#c8">模型差异与针对性策略（DeepSeek / Mistral）</a></li>
+<li><a href="#c9">常见误区（5 个必须破除）</a></li>
+<li><a href="#c10">OPC 单人落地方案</a></li>
+<li><a href="#c11">实战案例：外资客户被仿冒占 AI 的维权纠偏</a></li>
+<li><a href="#c12">配套交付物索引</a></li>
+<li><a href="#app">附录：术语表</a></li>
+</ol>
+</div>
+
+<!-- 第1章 -->
+<h2 id="c1">第一章　认知：什么是 GEO</h2>
+<div class="box key">
+<b>一句话定义：</b>GEO（Generative Engine Optimization，生成式引擎优化）就是 <b>"AI 时代的 SEO"</b>。以前让品牌在百度/谷歌排前面；现在让品牌在 AI 的回答里被提到、被推荐——相当于"让 AI 当你的推销员"。
+</div>
+<h3>通俗类比（讲给客户听）</h3>
+<table>
+<tr><th>维度</th><th>搜索引擎（旧入口）</th><th>AI 会话（新入口）</th></tr>
+<tr><td>用户动作</td><td>搜"哪个跑步鞋好" → 翻前几条链接自己挑</td><td>问 AI"推荐个跑步鞋" → AI 直接甩 3 个名字</td></tr>
+<tr><td>决策权</td><td>在用户自己</td><td>用户把判断权交给 AI（近八成直接采纳前 3）</td></tr>
+<tr><td>你的目标</td><td>抢搜索首页排名</td><td>进入 AI 的检索知识体系，被理解并推荐</td></tr>
+</table>
+<h3>与 SEO 的根本区别</h3>
+<ul>
+<li><b>影响的不是搜索结果，而是 AI 跟用户对话时给出的结论。</b></li>
+<li>SEO 是"买个展示位"（你付钱就露脸）；GEO 是让 AI 在自由生成时"自己觉得你该被推荐"——更难但更牢固。</li>
+<li><b>本质不是"露脸战"而是"认知战"</b>：让 AI 对你的认知准确、正面、优先；AI 说错你（把功能讲反、把竞品当第一）比不提你还糟。</li>
+</ul>
+
+<!-- 第2章 -->
+<h2 id="c2">第二章　为什么现在要做</h2>
+<ul>
+<li>消费者决策从"搜关键词"变成<b>"向 AI 要答案"</b>。引用数据：83% 中国用户用 AI 搜消费信息，74% 信任 AI 比较结果，近八成直接采纳前 3 条推荐。</li>
+<li>传统 SEO 抢"搜索首页排名"失效，新战场是"<b>进入 AI 的检索知识体系，被 AI 理解并推荐</b>"。</li>
+<li><b>痛点</b>：如果 AI 回答里压根没你，用户根本不知道你存在——你在这个新入口"失声"了。</li>
+</ul>
+
+<!-- 第3章 -->
+<h2 id="c3">第三章　市场格局</h2>
+<h3>海外代表产品</h3>
+<table>
+<tr><th>产品</th><th>定位</th><th>实现特色</th><th>价格（2026 公开）</th></tr>
+<tr><td>Profound</td><td>企业级标准</td><td>真实用户 prompt 面板 + 引用/情感分析 + Agent 起草内容</td><td>Lite ~$499/月</td></tr>
+<tr><td>AthenaHQ</td><td>中大型（Google/DeepMind 背景）</td><td>ACE 引擎：权威信号+结构化信息架构+实体覆盖；收入归因</td><td>$295/月</td></tr>
+<tr><td>Otterly.AI</td><td>SMB/代理商入门</td><td>监测导向，6 引擎，引用归因，独有 MCP server</td><td>$29/月起</td></tr>
+<tr><td>Peec AI</td><td>实体/SKU 级</td><td>柏林 2025 创立，产品/功能级细粒度追踪</td><td>€85/月起</td></tr>
+<tr><td>Scrunch AI</td><td>高合规行业</td><td>专攻幻觉检测 + AI 体验层</td><td>$500/月起</td></tr>
+<tr><td>Brandwell</td><td>GEO+SEO 融合</td><td>针对 AI Overview 优化页面结构</td><td>订阅制</td></tr>
+</table>
+<h3>国内代表产品</h3>
+<table>
+<tr><th>产品</th><th>实现特色</th><th>覆盖引擎</th></tr>
+<tr><td>迈富时 Marketingforce（02556.HK）</td><td>全栈 GEO，自研 Tforce 大模型+智能体中台</td><td>DeepSeek/豆包/文心/Kimi/元宝</td></tr>
+<tr><td>珍岛集团</td><td>中小企业标准化交付，5000+ 行业模板</td><td>多平台</td></tr>
+<tr><td>洞察力科技</td><td>算法级：逆向分析大模型决策，发布前预测引用率</td><td>垂直场景</td></tr>
+<tr><td>智推时代 GenOptima</td><td>GENO 系统，四大智能体+六大引擎，20+ 语言</td><td>全球主流</td></tr>
+<tr><td>蓝标数字</td><td>全球化 GEO，跨文化语义对齐</td><td>海外 SearchGPT/Perplexity</td></tr>
+<tr><td>复知智云</td><td>Multi-Agent 6 步闭环（定写校发见证）</td><td>国内为主</td></tr>
+</table>
+<div class="box">
+<b>两条路线已清晰：</b>① <b>监测优先</b>（Otterly/Peec，重数据轻执行）；② <b>执行优先</b>（Profound/AthenaHQ/复知，Agent 自动化内容+信源）。复知站在后者。国内玩家真正的本地化护城河是<b>微信/公众号/小红书语料</b>——海外工具普遍不覆盖。
+</div>
+
+<!-- 第4章 -->
+<h2 id="c4">第四章　原理：AI 怎么生成答案</h2>
+<p>这是 GEO 成立的底层逻辑。答案来源分两种：</p>
+<table>
+<tr><th>来源</th><th>怎么来的</th><th>特点</th></tr>
+<tr><td><b>模型记忆</b></td><td>训练时从海量文本"学进去"，固化成参数</td><td>有截止日期；不问网络；可能幻觉</td></tr>
+<tr><td><b>实时检索（RAG）</b></td><td>回答前先去网上搜，把网页塞进上下文再生成</td><td>能答最新事；带引用；随网页变化</td></tr>
+</table>
+<h3>2026 主流产品默认行为</h3>
+<table>
+<tr><th>产品</th><th>默认是否联网</th><th>说明</th></tr>
+<tr><td>Perplexity / Gemini / ChatGPT(付费) / Grok</td><td>✅ 是</td><td>现查现答，带引用</td></tr>
+<tr><td>Claude / DeepSeek / Mistral / 本地模型</td><td>❌ 否</td><td>靠训练数据，需手动开浏览</td></tr>
+<tr><td>豆包 / 文心 / Kimi / 元宝（国内）</td><td>✅ 多支持联网</td><td>版本间有差异，建议实测</td></tr>
+</table>
+<div class="box">
+<b>关键事实：</b>① AI 引用由"检索"决定，但模型记忆也同时起作用（ChatGPT"认识"某品牌时 67% 写进搜索词，不认识时仅 11%）；② <b>46% 的品牌提及背后没有任何引用页面</b>——纯靠模型"背下来的"印象；③ 引用随时间漂移（同一问题两周后重叠仅 40%）。<b>真实世界里 AI 是两者混合</b>，所以 GEO 要"双管齐下"：既喂记忆，也占实时信源。
+</div>
+
+<!-- 第5章 -->
+<h2 id="c5">第五章　实施方法论</h2>
+<h3>通用四层（对比基准）</h3>
+<table>
+<tr><th>层</th><th>干什么</th><th>关键动作</th></tr>
+<tr><td>监测 Measure</td><td>看品牌在 AI 回答里"有没有、怎么被说"</td><td>建 prompt 库 → 定时批量问 AI → 抓答案文本</td></tr>
+<tr><td>分析 Analyze</td><td>量化 + 找缺口</td><td>提及率、声量份额 SoV、引用率、情感、来源域名、内容缺口</td></tr>
+<tr><td>执行 Act</td><td>让 AI 更爱提你</td><td>内容优化/生成、信源建设、PR/媒体铺量、发布分发</td></tr>
+<tr><td>闭环</td><td>持续迭代</td><td>监测→调整→再监测，部分用强化学习自动修复</td></tr>
+</table>
+<h3>落地五步（大白话版）</h3>
+<ol>
+<li><b>看（体检）</b>：机器人伪装用户去问各 AI 那些清单问题，汇报"提没提你、说对没、提的是竞品还是你"。</li>
+<li><b>写 + 改（补短板）</b>：发现 AI 不懂/说错你，写"AI 爱读"的内容——结构清楚、专业、有权威感，不像广告像说明书。</li>
+<li><b>铺（塞进参考书）</b>：发到 AI 平时会抓的地方——官网、权威媒体、行业站、问答社区。</li>
+<li><b>发 + 对接（放大声量）</b>：一键分发多平台，对接达人（KOL/KOC）。</li>
+<li><b>盯 + 修（7×24 保姆）</b>：全天候盯着，掉了/说错立刻报警并自动补内容修复。</li>
+</ol>
+<div class="box key"><b>核心原理：</b>把 AI 想成"爱抄作业、但只抄看得到的参考书的学生"。它推荐谁，看自己读过的、觉得靠谱的资料里谁出现多、说得清、有权威背书。GEO 就是把你的正确信息精准写进 AI 常翻的那几本"参考书"，并持续擦掉竞品写的错答案。</div>
+
+<!-- 第6章 -->
+<h2 id="c6">第六章　信源建设（核心执行动作）</h2>
+<p><b>本质：</b>把真信息铺到 AI 会读、会信、会引用的地方。按"AI 怎么读"分层：</p>
+<table>
+<tr><th>层级</th><th>信源类型</th><th>为什么 AI 爱读</th></tr>
+<tr><td>一级（必抓）</td><td>Wikipedia、政府/官方文件、权威媒体、学术库、Common Crawl 网页</td><td>高权重、结构化、被反复验证</td></tr>
+<tr><td>二级（强相关）</td><td>行业站、协会、知乎/Stack Exchange、垂直论坛</td><td>专业度高、实体清晰</td></tr>
+<tr><td>三级（自有）</td><td>官网、博客、新闻稿、产品页</td><td>完全可控，要被抓取</td></tr>
+<tr><td>四级（社媒）</td><td>小红书、微博、公众号、抖音</td><td>国内模型权重高，国际/Common Crawl 未必抓</td></tr>
+</table>
+<h3>六类实施动作</h3>
+<ol>
+<li><b>官网改造</b>：llms.txt + schema.org + FAQ 页 + 清晰实体介绍（见第七章）。</li>
+<li><b>权威/百科占位</b>：Wikipedia（中/英/欧语版）、行业百科、协会名录、政府备案。</li>
+<li><b>媒体与 PR</b>：权威媒体发稿、行业报道、新闻稿（一条权威报道顶几十条自软文）。</li>
+<li><b>第三方背书</b>：评测、行业报告引用、认证、协会成员——建立"知识图谱"实体关系。</li>
+<li><b>问答社区填坑</b>：知乎专业回答（DeepSeek 中文权重极高）、Stack Exchange。</li>
+<li><b>法律文件上网</b>：商标权属、招标人澄清函、举报结果——官方/法律文件是 AI 眼里的"权威信号"。</li>
+</ol>
+<h3>内容形态：E-E-A-T</h3>
+<table>
+<tr><th>原则</th><th>落地</th></tr>
+<tr><td>专业 Expertise</td><td>技术规格、白皮书准确，避免口语软文</td></tr>
+<tr><td>权威 Authoritativeness</td><td>引用权威媒体/协会/官方文件，展示资质</td></tr>
+<tr><td>可信 Trustworthiness</td><td>信息一致、有出处、有联系方式，不夸大</td></tr>
+<tr><td>像说明书不像广告</td><td>AI 按语义切块抓取，清晰结构才被引用</td></tr>
+</table>
+<div class="box"><b>联网型 vs 记忆型操作差异：</b>联网型占"任何高权重网页"即可，几天~几周见效；记忆型必须进 Common Crawl/Wikipedia/知乎等它们明确抓的源，等下次训练（6–12 月+）。</div>
+
+<!-- 第7章 -->
+<h2 id="c7">第七章　官网 AI 友好化（技术落地）</h2>
+<p>两项关键文件（完整模板见配套《官网 AI 友好化改造清单》）：</p>
+<h3>llms.txt —— 放网站根目录</h3>
+<ul>
+<li><b>位置</b>：<code>https://你的域名/llms.txt</code>（与 robots.txt 平级）。</li>
+<li><b>作用</b>：给 AI 爬虫一份"本站重点阅读清单"。</li>
+<li><b>格式</b>：Markdown 文本，含网站简介 + 重点页面链接 + 重要事实（商标权属、授权关系、仿冒警示）。</li>
+</ul>
+<h3>schema.org 结构化数据 —— 嵌进网页 &lt;head&gt;</h3>
+<ul>
+<li><b>位置</b>：各页 <code>&lt;head&gt;</code> 内 JSON-LD（<code>&lt;script type="application/ld+json"&gt;</code>）。</li>
+<li><b>作用</b>：直接告诉 AI 实体关系（公司名、母公司、授权方、关联权威源），不用猜。</li>
+<li><b>关键字段</b>：<code>name / alternateName / url / logo / sameAs / parentOrganization / department</code>。</li>
+<li><b>验证</b>：Google Rich Results Test 或 Schema Markup Validator。</li>
+</ul>
+<h3>另两个必做页</h3>
+<ul>
+<li><b>正品 / 商标权属声明页</b>：仿冒场景核心，含注册号、授权渠道、鉴别方法、仿冒警示（中英文）。</li>
+<li><b>FAQ 标准答案页</b>：问题=用户原话，答案清晰带出处；AI 最爱抓取问答型内容。</li>
+</ul>
+
+<!-- 第8章 -->
+<h2 id="c8">第八章　模型差异与针对性策略</h2>
+<h3>DeepSeek（中文为主 &gt;60%）</h3>
+<table>
+<tr><th>项目</th><th>事实（2026 核对）</th></tr>
+<tr><td>更新频率</td><td>非实时，重训才更新。V4 于 2026-04 上市，训练数据截止约 2025-05；大版本间隔 6–12 月+</td></tr>
+<tr><td>采集平台</td><td>Common Crawl、Wikipedia、政府网站、四大门户、知乎、头条号/搜狐号/网易号、arXiv/CNKI、GitHub、Reddit/Stack Overflow</td></tr>
+<tr><td>针对性</td><td>强化知乎+权威媒体+政府/协会网站；等其下次训练才"背"进真信息</td></tr>
+</table>
+<h3>Mistral（欧洲主权，160+ 语言）</h3>
+<table>
+<tr><th>项目</th><th>事实（2026 核对）</th></tr>
+<tr><td>更新频率</td><td>Large 4 于 2026-10 预览（万亿参数），未公布知识截止；大版本间隔以年计</td></tr>
+<tr><td>采集平台</td><td>Wikipedia（24 语言）、Common Crawl（欧盟内容加权）、EUR-Lex（欧盟法律库）、Arxiv、GitHub、法德贸易媒体、欧洲出版商</td></tr>
+<tr><td>针对性</td><td>欧洲企业采购默认模型；欧洲业务需强化 Wiki 欧语版+欧洲媒体+EUR-Lex 类官方文件</td></tr>
+</table>
+<div class="box warn"><b>记忆型纠偏=种树：</b>今天发真信息不会立刻让 DeepSeek/Mistral 改口，得等下次重训。所以针对这类模型要"提前布局、持续维护"，同时靠前端套的实时检索层拿短期改善。</div>
+
+<!-- 第9章 -->
+<h2 id="c9">第九章　常见误区（5 个必须破除）</h2>
+<table>
+<tr><th>误区</th><th>真相</th></tr>
+<tr><td>❌ 重复提问能改变 AI 回答</td><td>✅ 推理无状态、不学习、不进训练集；刷提问无效（监测≠改变）</td></tr>
+<tr><td>❌ 能直接"删除"AI 里的不实信息</td><td>✅ 只能改它的信息来源让它改口；承诺"包删"不靠谱，黑产删帖违法且反弹</td></tr>
+<tr><td>❌ 效果指标有第三方认证</td><td>✅ 首推率/提及率是厂商自定义口径，无独立审计；基准线由厂商设定</td></tr>
+<tr><td>❌ 见效快=长期有效</td><td>✅ 多因"纠偏+占位"非建认知；AI 算法漂移，需持续盯</td></tr>
+<tr><td>❌ llms.txt 是强制标准</td><td>✅ 是事实标准非强制，各家自主决定是否读取；schema.org 确定性更高</td></tr>
+</table>
+
+<!-- 第10章 -->
+<h2 id="c10">第十章　OPC 单人落地方案</h2>
+<p>详见配套《OPC-GEO-最小启动方案》。要点：</p>
+<table>
+<tr><th>维度</th><th>OPC 能搞定</th><th>OPC 难啃（需外部杠杆）</th></tr>
+<tr><td>能力</td><td>监测、内容生成、基础发布、盯盘</td><td>权威信源、达人矩阵、跨行业专业度、全平台实时对抗</td></tr>
+<tr><td>资源</td><td>1 个 LLM 账号 + 1 个监测工具 + 3–5 自有阵地 + 1 套打法</td><td>媒体投稿/达人投放按需外采</td></tr>
+<tr><td>成本</td><td>基础固定 ¥500–1,500/月，开张起点 ≈¥1,000/月</td><td>媒体发稿 ¥2k–2w、达人 ¥500–5k/条</td></tr>
+</table>
+<div class="box">OPC 甜区是<b>单行业、少客户、重服务</b>的精品模式，赚认知差和执行细，不是规模。护城河是数据资产+行业认知，不是技术。</div>
+
+<!-- 第11章 -->
+<h2 id="c11">第十一章　实战案例：外资客户被仿冒占 AI</h2>
+<p><b>场景：</b>外资方国内有公司仿其名称/产品投标，假公司大量网络推广，导致行业产品的 AI 回答也在推假公司。</p>
+<h3>病根</h3>
+<p>AI 基于"读过的东西"生成。假公司声量大、在官网/媒体/招投标信息到处留痕 → AI 误以为它是真身/主流。真外资中文声量小、信源少 → AI 偏向声量大的。这不是 AI 的错，是信源被假公司占了。</p>
+<h3>四步打法（按优先级）</h3>
+<ol>
+<li><b>掐源头（法律，最根本）</b>：仿名+仿产品投标 = 商标侵权+不正当竞争。律师函、向招标人发澄清函、市场监管举报、平台侵权投诉下架。</li>
+<li><b>清信源</b>：假公司在百度/知乎/小红书/行业站的不实推广，逐站举报下架。</li>
+<li><b>立真身</b>：发官方声明（商标权属、正品鉴别、授权渠道）、官网优化、权威媒体发真身信息。</li>
+<li><b>纠 AI</b>：持续往 AI 信源塞真信息、盯 AI 回答，发现推假公司就补内容修复。</li>
+</ol>
+<h3>时间 & 钱（务实区间）</h3>
+<table>
+<tr><th>动作</th><th>时间</th><th>费用</th></tr>
+<tr><td>律师函 / 招标人澄清函</td><td>几天</td><td>几千元</td></tr>
+<tr><td>平台投诉下架假内容</td><td>几天~几周</td><td>时间为主，可自做</td></tr>
+<tr><td>行政举报 / 诉讼</td><td>几周~数月</td><td>几万~十几万</td></tr>
+<tr><td>官方声明 + 权威媒体发稿</td><td>1~2 周</td><td>几千~几万</td></tr>
+<tr><td>GEO 纠偏（工具+内容+盯盘）</td><td>1~3 月见效</td><td>自建几百~几千/月；外包几万起/项目</td></tr>
+</table>
+<div class="box warn"><b>关键提醒：</b>AI 回答没法"直接删"，只能改信源让其改口；任何"包删包压 100%"都不靠谱。投标场景最快止血是<b>直接发函给招标人澄清</b>（采购决策在人不在 AI，几天止损）。只做 GEO 压不住根——假公司还在投标/发推广，纠偏是持久战。</div>
+
+<!-- 第12章 -->
+<h2 id="c12">第十二章　配套交付物索引</h2>
+<table>
+<tr><th>文件</th><th>内容</th><th>用途</th></tr>
+<tr><td>官网AI友好化改造清单.html</td><td>llms.txt 模板、schema.org 字段表与示例、FAQ 写法、正品声明页、验证方法、诚实边界</td><td>发给客户技术团队照做</td></tr>
+<tr><td>OPC-GEO-最小启动方案.html</td><td>工具选型表（含 2026 真实价格）、成本估算、第一步动作、OPC 能力边界</td><td>单人创业者启动参考</td></tr>
+<tr><td>GEO完整培训资料.html（本文件）</td><td>全链路 12 章 + 术语表</td><td>内部培训 / 客户宣讲</td></tr>
+</table>
+
+<!-- 附录 -->
+<h2 id="app">附录　术语表</h2>
+<table>
+<tr><th>术语</th><th>含义</th></tr>
+<tr><td>GEO</td><td>Generative Engine Optimization，生成式引擎优化（AI 时代的 SEO）</td></tr>
+<tr><td>AEO</td><td>Answer Engine Optimization，答案引擎优化（海外对 GEO 的别称）</td></tr>
+<tr><td>RAG</td><td>Retrieval-Augmented Generation，检索增强生成（AI 现查现答）</td></tr>
+<tr><td>E-E-A-T</td><td>Experience/Expertise/Authoritativeness/Trustworthiness，谷歌内容质量框架</td></tr>
+<tr><td>SoV</td><td>Share of Voice，声量份额（品牌在 AI 回答中的占比）</td></tr>
+<tr><td>llms.txt</td><td>站点级文件，告诉 AI 爬虫优先读哪些页面（事实标准，非强制）</td></tr>
+<tr><td>schema.org</td><td>结构化数据词汇表，用 JSON-LD 让 AI 读懂实体关系</td></tr>
+<tr><td>Common Crawl</td><td>开放网页抓取数据集，多数开源/中立模型训练语料来源</td></tr>
+<tr><td>KOL / KOC</td><td>关键意见领袖 / 关键意见消费者（达人矩阵）</td></tr>
+<tr><td>OPC</td><td>One-Person Company，一人公司</td></tr>
+</table>
+
+<div class="footer">
+本资料由 GEO 方法论咨询对话整理，仅供内部培训与客户宣讲使用。所有产品行为、价格、模型知识截止日期等信息截至 2026 年 11 月，来源于公开披露与行业分析，会随厂商迭代变化，落地前请以官方实时信息为准。效果指标（首推率/提及率等）为厂商自定义口径，无独立第三方审计，引用时需向客户明确说明。
+</div>
+
+</div>
+</body>
+</html>

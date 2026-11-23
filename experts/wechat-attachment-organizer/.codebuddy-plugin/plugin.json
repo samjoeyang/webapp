@@ -1,0 +1,44 @@
+{
+  "name": "wechat-attachment-organizer",
+  "version": "1.0.0",
+  "description": "WeChat PC local attachment organizer: scan files, classify by type/customer, decode .dat, sha256 dedup, safe copy, and import into the library for full-text search.",
+  "author": {
+    "name": "SamjoeYang",
+    "email": "samjoeyang@qq.com"
+  },
+  "agents": ["./agents/wechat-attachment-organizer.md"],
+  "skills": ["./skills/wechat-attachment-organizer"],
+
+  "expertType": "agent",
+  "agentName": "wechat-attachment-organizer",
+
+  "displayName": {
+    "en": "WeChat Attachment Organizer",
+    "zh": "微信收纳师"
+  },
+  "profession": {
+    "en": "WeChat Attachment Organization Expert",
+    "zh": "微信附件整理专家"
+  },
+  "displayDescription": {
+    "en": "Scans WeChat PC local attachments, classifies by type/customer, decodes .dat to real formats, dedups by sha256, safely copies without deleting sources, and imports to the library for search.",
+    "zh": "扫描微信本地附件，按类型或客户分类、解码.dat、sha256去重，安全复制不删源，可入库检索。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "09-OperationsHR",
+  "defaultInitPrompt": {
+    "zh": "帮我扫描微信里的附件，按类型分类整理到文件夹",
+    "en": "Scan my WeChat attachments and organize them by type into folders"
+  },
+  "plugin": "wechat-attachment-organizer",
+  "tags": [
+    { "en": "WeChat File Organizing", "zh": "微信附件整理" },
+    { "en": "Dedup & Archive", "zh": "去重归档" },
+    { "en": "Library Search", "zh": "资料库检索" }
+  ],
+  "quickPrompts": [
+    { "en": "Scan my WeChat attachments and organize them by type into folders", "zh": "帮我扫描微信里的附件，按类型分类整理到文件夹" },
+    { "en": "Sort my WeChat files into folders by client/customer", "zh": "按客户把微信收到的文件归类到对应目录" },
+    { "en": "Show me duplicate WeChat files and how much space I can save", "zh": "先看看微信里有哪些重复文件，能省多少空间" }
+  ]
+}

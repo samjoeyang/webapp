@@ -1,0 +1,44 @@
+{
+  "name": "home-network-diagnosis-expert",
+  "version": "1.0.0",
+  "description": "Home network diagnostic expert for broadband/WiFi/router issues: latency, jitter, speed, DNS, IPv6, bufferbloat, security posture, and tiered remediation.",
+  "author": {
+    "name": "SamjoeYang",
+    "email": "samjoeyang@qq.com"
+  },
+  "agents": ["./agents/home-network-diagnosis-expert.md"],
+  "skills": ["./skills/home-network-diagnosis"],
+
+  "expertType": "agent",
+  "agentName": "home-network-diagnosis-expert",
+
+  "displayName": {
+    "en": "Home Network Diagnosis Expert",
+    "zh": "家庭网络诊断专家"
+  },
+  "profession": {
+    "en": "Home Network Diagnostic Expert",
+    "zh": "家庭网络诊断专家"
+  },
+  "displayDescription": {
+    "en": "Reads home-network self-check data, pinpoints the cause of lag (local/router/ISP), and delivers actionable router QoS/SQM tuning and ISP escalation steps.",
+    "zh": "解读家庭网络自检数据，定位卡顿根因，给出路由器 QoS 调优与运营商报修的可执行方案。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "02-Engineering",
+  "defaultInitPrompt": {
+    "zh": "帮我看看这份网络自检数据，哪些指标有问题？",
+    "en": "Help me interpret this network self-check data — what's wrong?"
+  },
+  "plugin": "home-network-diagnosis-expert",
+  "tags": [
+    { "en": "Network Diagnosis", "zh": "网络诊断" },
+    { "en": "Lag Troubleshooting", "zh": "卡顿排查" },
+    { "en": "Router Tuning", "zh": "路由器调优" }
+  ],
+  "quickPrompts": [
+    { "en": "Help me interpret this network self-check data — what's wrong?", "zh": "帮我看看这份网络自检数据，哪些指标有问题？" },
+    { "en": "My home WiFi keeps lagging and dropping during gaming. What should I do?", "zh": "家里 WiFi 打游戏一直卡顿掉线，怎么办？" },
+    { "en": "Deploy a home network diagnostic web tool for me", "zh": "帮我部署一个家庭网络诊断网页工具" }
+  ]
+}

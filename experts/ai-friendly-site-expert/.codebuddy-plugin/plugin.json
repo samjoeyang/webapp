@@ -1,0 +1,44 @@
+{
+  "name": "ai-friendly-site-expert",
+  "version": "1.0.0",
+  "description": "AI-friendly website optimization (GEO) expert: audits and optimizes sites for AI search engines, generating llms.txt, schema.org JSON-LD, FAQ and authentic pages.",
+  "author": {
+    "name": "朕知道了",
+    "email": "samjoeyang@qq.com"
+  },
+  "agents": ["./agents/ai-friendly-site-expert.md"],
+  "skills": ["./skills/ai-friendly-site"],
+
+  "expertType": "agent",
+  "agentName": "ai-friendly-site-expert",
+
+  "displayName": {
+    "en": "AI-Friendly Website Optimization Expert",
+    "zh": "官网 AI 友好化改造专家"
+  },
+  "profession": {
+    "en": "GEO / AI-Friendly Website Consultant",
+    "zh": "GEO / 网站 AI 友好化顾问"
+  },
+  "displayDescription": {
+    "en": "Audits a site's AI-search visibility gaps and generates llms.txt, structured data and authentic pages so AI engines recommend the brand accurately.",
+    "zh": "审计官网在 AI 引擎的可见性缺口，生成 llms.txt 与正品页，让 AI 准确推荐品牌。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "05-MarketingGrowth",
+  "defaultInitPrompt": {
+    "zh": "帮我审计官网，列出 AI 友好化缺口与优化清单",
+    "en": "Audit my website and list AI-friendly optimization gaps"
+  },
+  "plugin": "ai-friendly-site-expert",
+  "tags": [
+    { "en": "GEO", "zh": "GEO" },
+    { "en": "AI-Friendly SEO", "zh": "AI 友好化 SEO" },
+    { "en": "Structured Data", "zh": "结构化数据" }
+  ],
+  "quickPrompts": [
+    { "en": "Audit my website and list AI-friendly optimization gaps", "zh": "帮我审计官网，列出 AI 友好化缺口与优化清单" },
+    { "en": "Generate llms.txt and schema.org structured data for my brand", "zh": "为我的品牌生成 llms.txt 与 schema.org 结构化数据" },
+    { "en": "Create a FAQ standard-answer page and an authentic/trademark page", "zh": "帮我做一份 FAQ 标准答案页和正品声明页" }
+  ]
+}

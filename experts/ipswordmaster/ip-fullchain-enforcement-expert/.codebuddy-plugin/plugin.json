@@ -1,0 +1,68 @@
+{
+  "name": "ip-fullchain-enforcement-expert",
+  "version": "1.0.0",
+  "description": "Full-chain IP consultant that orchestrates rights audit, infringement discovery, screening, comparison, evidence, platform complaint, administrative, dispute resolution, execution and cross-border actions into one decision-ready advisory workflow",
+  "author": {
+    "name": "知产刀客 · SamjoeYang",
+    "email": "samjoeyang@qq.com"
+  },
+  "agents": [
+    "./agents/ip-fullchain-enforcement-expert.md"
+  ],
+  "skills": [
+    "./skills/ip-rights-audit",
+    "./skills/ip-infringement-discovery",
+    "./skills/ip-infringement-screening",
+    "./skills/ip-infringement-analysis",
+    "./skills/ip-evidence-collection",
+    "./skills/ip-complaint-playbook",
+    "./skills/ip-platform-complaint",
+    "./skills/ip-administrative-action",
+    "./skills/ip-civil-litigation",
+    "./skills/ip-criminal-enforcement",
+    "./skills/ip-judgment-execution",
+    "./skills/ip-cross-border-enforcement"
+  ],
+
+  "expertType": "agent",
+  "agentName": "ip-fullchain-enforcement-expert",
+
+  "displayName": {
+    "en": "Full-Chain IP Consultant",
+    "zh": "知识产权全链路顾问"
+  },
+  "profession": {
+    "en": "IP Strategy Consultant",
+    "zh": "知识产权战略顾问"
+  },
+  "displayDescription": {
+    "en": "Full-chain IP consultant covering rights audit, discovery, screening, evidence, platform complaint, administrative and dispute resolution, with path decisioning and actionable plans.",
+    "zh": "知识产权全链路顾问：覆盖确权、监测、研判、固证、平台投诉、行政与争议解决，给出路径决策与落地方案"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "12-IndustryConsultant",
+  "defaultInitPrompt": {
+    "zh": "我有一批侵权线索，帮我走一遍全链路顾问方案",
+    "en": "I have a batch of infringement leads, walk me through a full-chain advisory plan"
+  },
+  "plugin": "ip-fullchain-enforcement-expert",
+  "tags": [
+    { "en": "Full-Chain Advisory", "zh": "全链路顾问" },
+    { "en": "Infringement Screening", "zh": "侵权研判筛查" },
+    { "en": "Protection Path Strategy", "zh": "保护路径决策" }
+  ],
+  "quickPrompts": [
+    {
+      "en": "I have a batch of infringement leads, walk me through a full-chain advisory plan",
+      "zh": "我有一批侵权线索，帮我走一遍全链路顾问方案"
+    },
+    {
+      "en": "Should this case go platform complaint, administrative, or dispute resolution? Help me decide",
+      "zh": "这个案子该走平台投诉、行政还是争议解决？帮我决策"
+    },
+    {
+      "en": "Run an infringement comparison and protection feasibility assessment",
+      "zh": "帮我做侵权比对与保护可行性评估"
+    }
+  ]
+}

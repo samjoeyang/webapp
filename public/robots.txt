@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# 面向大语言模型（LLM / AI Agent）的资源索引
+# 详见 https://webapp.zhenzhidaole.com/llms.txt
+
+# 站点地图
+Sitemap: https://webapp.zhenzhidaole.com/sitemap.xml
