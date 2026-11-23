@@ -9,6 +9,7 @@
   - **webapps 门户**：走 **Git 集成自动部署**——只需 `git commit` + `git push origin main`，Vercel 根据仓库变化自动构建部署（项目 `unoecp-webapps`，rootDirectory=`website/webapps`，绑定 `webapp.zhenzhidaole.com`）。**不要对 webapps 用 Vercel CLI 直传**：从子目录部署会拼接 rootDirectory 报路径错；从 repo 根部署会因 monorepo 17043 文件超 15000 限制而失败（除非 `--archive=tgz`，但没必要）。
   - **utils_api**：走 **Vercel CLI 部署**——在 `website/utils_api/` 目录执行 `vercel --prod --yes`（CLI 已 link 到项目 `unoecp_utils`，生产 `utils.api.zhenzhidaole.com` 别名自动跟随新部署）。该 API 不做 Git 自动部署。
   - Vercel CLI 在 PATH 中不可用，需用绝对路径 `/Users/samjoeyang/.nvm/versions/node/v24.15.0/bin/vercel`；CLI 退出时清理 telemetry 文件会被沙箱拦截导致退出码非零，但部署本身已成功，属噪音可忽略。
+- **项目独立迁移（2026-11-23，当前 workspace 即新仓库）**：工作区 `/Users/samjoeyang/workspace/webapp` 已是独立仓库 `https://github.com/samjoeyang/webapp.git`（main）。Vercel 新项目 `webapp`（`prj_V4ae7NohKOyATieq8T7eANPEfVVy`）接管 `webapp.zhenzhidaole.com`，旧项目 `unoecp-webapps` 仅剩 `*.vercel.app` 域名。当前生产部署由 REST API 静态上传 `dist/` 生成；**Git 自动部署未接通**——账号未安装 Vercel GitHub App，需用户安装并把项目连到 `samjoeyang/webapp`。后续仍以 push 触发自动部署为目标，push 前须用户明确同意。
 
 ## 专家应用（WorkBuddy Expert）存放约定（2026-10-28 确立）
 - 本项目的专家源码与打包文件统一放在 `webapps/experts/` 下：`experts/<name>/`（源码包）与 `experts/<name>.zip`（分享包）。可随仓库版本管理。**此约定仅限本项目（unoecp/website/webapps），不适用于其他项目；其他项目若需建专家，目录另行确定，不默认套用本路径。**
