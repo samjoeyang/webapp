@@ -1,7 +1,10 @@
 # 垃圾分类目录与跨版本路径说明
 
 本文件供 `scan.py` 与 `clean.py` 配合使用，列出每个清理类目的含义、扫描路径、
-严重级别与 macOS 版本差异。CleanMyMac 覆盖的主要类目均已包含。
+严重级别与 macOS 版本差异。CleanMyMac 5.5.7 的完整功能/实现对照见 `cleanmymac-benchmark.md`。
+
+⚠️ v2.6.0 起，类目的**权威定义**在 `rules/categories.json`（40 项），本文件是给人看的索引；
+改路径 / 加类目请编辑规则文件，语法见 `rules-library.md`。
 
 ## 严重级别（severity）
 - `safe`：可放心清理，App 下次运行会重建，几乎无副作用。
@@ -51,6 +54,7 @@
 | cpp_junk | C/C++ 环境垃圾 | caution | user | 编译/包缓存：`~/.ccache`、`~/Library/Caches/ccache`、`~/.cache/{ccache,sccache,vcpkg}`、Conan `~/.conan/data`（v1）/`~/.conan2/p`（v2，均不含 profiles 等用户配置）；构建产物：开发目录下 `build/builddir/build-debug/build-release/cmake-build-*/out/obj/bin/CMakeFiles`（深度≤2，重新编译可恢复；bin/out 可能含交付产物）。位于 venv/node_modules/vendor/target 等**环境目录内部**的同名子目录自动跳过（如 venv 的 `bin/` 不是构建产物）。**逐目录确认** |
 | php_junk | PHP 环境垃圾 | caution | user | Composer 下载缓存 `~/.composer/cache`、`~/.cache/composer`、`~/Library/Caches/composer` + 开发目录下 `vendor/`（深度≤2，`composer install` 可重建）。不含 PHP 本体与全局 bin。**逐目录确认** |
 | ai_model_cache | AI 模型缓存 | caution | user | HuggingFace / PyTorch / Ollama / LM Studio 模型权重。**逐项确认**（重新下载成本高） |
+| ai_tool_junk | AI 工具缓存/日志 | safe | user | Claude/Codex/Gemini/Chrome DevTools MCP 的缓存、日志、遥测。按 CleanMyMac 5.7.4 `AIToolScanning.framework` 路径清单；**不含** settings.json/backups/skills/plugins 本体/CLI 可执行文件/模型版本目录 |
 | xdg_cache | 通用 XDG 缓存 | safe | user | `~/.cache` 下未被专用类目占用的子项（排除 pip/uv/huggingface/torch/yarn/pnpm/lm-studio/electron/electron-builder/ccache/sccache/vcpkg/composer） |
 | ruby_gem_cache | Ruby gem 缓存 | safe | user | `~/.gem/{cache,specs}`、`~/.bundle/cache`。不含已安装 gem 本体 |
 | misc_pkg_cache | 其他包管理器缓存 | safe | user | Maven `~/.m2/repository`、Gradle `~/.gradle/caches`、NuGet、SwiftPM、Ivy（Composer 缓存已归属 php_junk） |
@@ -58,6 +62,8 @@
 | external_trashes | 外接卷废纸篓 | caution | system | `/Volumes/*/.Trashes/<uid>`。清空后该盘上这些文件不可恢复 |
 | simulator_devices | iOS 模拟器 | caution | user | `~/Library/Developer/CoreSimulator/Devices` 各设备镜像。**逐项确认**（删后需重新下载运行时） |
 | app_support_caches | 应用支持目录缓存 | safe | user | `~/Library/Application Support/*/Caches`（不走标准 `~/Library/Caches` 的 App） |
+| duplicates | 重复文件 | caution | user | 由 `clutter_scan.py` 生成（大小分桶 + SHA-256）；每组建议保留 1 份，其余逐项确认。默认不自动全选 |
+| similar_images | 相似图片 | caution | user | 由 `clutter_scan.py` 生成（sips 缩略图 + 9x8 dHash + 并查集）；不扫描 `*.photoslibrary` / `.app` 包内部 |
 
 ---
 
@@ -78,7 +84,8 @@ Mail 的数据目录随 macOS 大版本改变 `V` 编号，清理邮件索引/�
 | 11 Big Sur | V9 |
 | 12 Monterey 及以后 | V10 |
 
-`scan.py` 依据 `sw_vers` 探测到的版本自动选择 `Vx`，并清理 `Envelope Index*` 与 `Attachments`、以及 `~/Library/Mail Downloads`。
+`scan.py` 优先读 `~/Library/Mail/PersistenceInfo.plist` 的 `LastUsedVersionDirectoryName`（CleanMyMac 5.7.4 `MailboxService.framework` 做法），
+失败时再找现存最大 `V<n>` 目录，最后才退回上表的 `sw_vers` 版本映射。只清理 `Envelope Index*` 与 `Attachments`、以及 `~/Library/Mail Downloads`。
 
 ### 2. 系统卷语义（Catalina 10.15+）
 - Catalina 起系统盘拆分为**只读密封系统卷** + 数据卷。因此：
@@ -135,17 +142,40 @@ Mail 的数据目录随 macOS 大版本改变 `V` 编号，清理邮件索引/�
 - 实测参考：`$TMPDIR` 常有数百个子项，但 7 天内的通常占 90%+，最终可清的多是几年前的僵尸目录。
 - 清理仍走回收站（`tmp_user` → `~/.Trash`；`tmp_system` → `/.Trashes/<uid>`），不直接 `rm`。
 
-### 9. AI 模型缓存与模拟器：体积大但重建代价高
+### 9. AI 模型缓存、AI 工具缓存与模拟器
 - `ai_model_cache` / `simulator_devices` 标 `per_item_confirm=True`。
+- `ai_tool_junk` 是 `safe` 类目：只收 `~/.claude/{telemetry,stats-cache.json,shell-snapshots,...}`、
+  `~/.codex/cache/*`、`~/.gemini/antigravity-browser-profile/...` 缓存、`~/.cache/chrome-devtools-mcp/...` 缓存、
+  `~/Library/Logs/Claude`、`~/.local/share/opencode/log`。这些是缓存/日志/遥测，删除后工具会重建。
+- **硬排除**：`settings.json`、`.claude/backups`、`.claude/skills`、plugins 本体、`.local/bin/claude`、
+  `.local/share/claude/versions`、`.local/share/cursor-agent`、模型权重（归 `ai_model_cache`）。
+  CleanMyMac 有 `aiClutterKindStaleVersions` 提示旧版本，但 CLI 无法可靠判定，不照搬。
+- `xdg_cache` 已排除 `~/.cache/chrome-devtools-mcp`，避免同一份字节重复计入。
 - 模型权重动辄数 GB～数十 GB，重下要流量和时间；模拟器删后需在 Xcode 重新下载运行时。
   **不要因为「体积大」就建议优先清** —— 对开发机而言这两类往往是刚需而非垃圾。
 
-### 10. 保留与剔除
-- `ALWAYS_PROTECTED`（写死在 scan.py）：`~/.workbuddy/binaries/python`、`~/.local/share/uv/python`、
-  `~/.rustup/toolchains`、`~/.gradle/wrapper`
+### 10. 快速巡检与持久化忽略（v2.4.0 新增）
+- `scan.py --quick`：Smart Care 式低风险巡检。跳过 `xcode_junk`/`ios_backups`/`npm_junk`/`python_junk`/
+  `rust_junk`/`cpp_junk`/`php_junk`/`ai_model_cache`/`simulator_devices`/`large_old_files` 及 Docker/系统级重型类目。
+  需要全量清理时不要加 `--quick`。
+- `scan.py --ignore-file <json>` / `clutter_scan.py --ignore-file <json>`：持久化忽略清单，
+  支持 `paths`/`prefixes`（前缀）与 `patterns`（fnmatch 通配）。格式见 `references/ignore-lists.md`。
+- `--keep` 仍是运行时临时保留；忽略清单是跨扫描持久生效。两者都只影响 manifest，不删除磁盘上的东西。
+
+### 11. 重复文件与相似图片
+- 不在 `scan.py` 内实现，而在 `scripts/clutter_scan.py`：避免让全量扫描因图像缩略图与哈希变慢。
+- 默认阈值 100 KB（与 CleanMyMac 一致）；重复用 SHA-256，相似用 dHash 汉明距离 ≤6/64。
+- `items` 只含每组 `suggested_remove`；`suggested_keep` 仅记录在 `groups` 元数据里供复核。
+- 清理仍走 `clean.py`，`per_item_confirm=true`，默认移入回收站。
+
+### 12. 保留与剔除
+- `always_protected`（定义在 `rules/defaults.json`，不是写死在脚本）：`~/.workbuddy/binaries/python`、
+  `~/.local/share/uv/python`、`~/.rustup/toolchains`、`~/.gradle/wrapper`
   ——工具链本体，永不进扫描结果。
 - `--keep <前缀>`（可多次给）：用户点名保留的目录，命中即剔除。本机示例：
   `--keep ~/workspace/.venv --keep ~/workspace/unokb-weknora`。
+- `ignore.json`：长期保留项，语义同 `--keep` 但可跨扫描；另有 `patterns` 通配。见 `references/ignore-lists.md`。
+- 规则库：所有路径/阈值的默认值来自 `rules/*.json`；`--rules-dir` 可临时替换。见 `references/rules-library.md`。
 
 ---
 

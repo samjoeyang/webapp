@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "files": {
+    "defaults.json": "8459f91f603fb9a105bfbf92ad6aee3884edb5e3573f175b77b5fdee6f72298d",
+    "collectors.json": "6b63a6d29257991a269d681b48a8b9594efe648da62dc91bc85e4ba28f6e92be",
+    "clutter.json": "e6bd46724fec4c9d6f3cbcd78bdbad97a78ef7f446711e91c4e498fc94dff1ec",
+    "categories.json": "5dfccaac35f6af1e5c8a7d85f5db01ef783617480c294539e6a296855143dba1"
+  }
+}

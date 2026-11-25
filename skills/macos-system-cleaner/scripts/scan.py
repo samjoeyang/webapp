@@ -27,25 +27,27 @@ import tempfile
 import subprocess
 import fnmatch
 
+from rules import (load_rules, make_context, resolve, resolve_category,
+                   RuleError, mail_version_pattern)
+
 HOME = os.path.expanduser("~")
+
+# 运行时状态（不是规则）：所有策略数据都从 rules/*.json 载入，此处只放空容器。
+RULES = None
+CTX = None
+ALWAYS_PROTECTED = []
+NAMED_DIR_GUARDS = set()
+DOCKER_CANDIDATES = []
+QUICK_SKIP_IDS = set()
+DEV_BASES = []
 
 # 命中即从扫描结果中剔除的前缀，由 --keep 填充（本机指定保留的目录放这里）。
 KEEP_PREFIXES = []
 
-# 永远剔除：这些是工具链本体（解释器/托管运行时），删了会直接坏掉，不属于「可清理垃圾」。
-ALWAYS_PROTECTED = [
-    os.path.join(HOME, ".workbuddy", "binaries", "python"),   # WorkBuddy 托管解释器与环境
-    os.path.join(HOME, ".local", "share", "uv", "python"),    # uv 的 cpython 解释器安装
-    os.path.join(HOME, ".rustup", "toolchains"),              # Rust 工具链本体（只清 downloads/tmp）
-    os.path.join(HOME, ".gradle", "wrapper"),                 # Gradle wrapper 下载的发行版
-]
-
-# 常用开发目录基准：node_modules / venv / target / vendor / build 等「过程产物」只在这些
-# 目录下查找（深度 ≤2），避免全盘遍历。npm/Python/Rust/C++/PHP 各类目共用。
-DEV_BASES = [os.path.join(HOME, d) for d in
-             ["Projects", "projects", "code", "dev", "Developer",
-              "work", "workspace", "Documents", "Desktop", "Downloads"]]
-
+# 持久化忽略清单（对标 CleanMyMac 的 Ignore List）：路径前缀 + fnmatch 通配。
+# 由 --ignore-file 载入；命中规则与 --keep / ALWAYS_PROTECTED 一样，只影响扫描结果。
+IGNORE_PREFIXES = []
+IGNORE_PATTERNS = []
 
 def _under(path, prefix):
     try:
@@ -56,10 +58,47 @@ def _under(path, prefix):
     return ap == pk or ap.startswith(pk + os.sep)
 
 
+def load_ignore_file(path):
+    """读取持久化忽略清单，返回载入的规则条数。
+
+    支持两种 JSON 形状：
+      {"paths": [...], "prefixes": [...], "patterns": [...]}
+      ["/path/a", "/Users/*/Library/Caches/Foo"]
+    纯路径默认按「前缀」处理；想用通配符请放进 patterns。
+    """
+    if not path:
+        return 0
+    with open(os.path.expanduser(path), "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if isinstance(data, list):
+        prefixes, patterns = data, []
+    elif isinstance(data, dict):
+        prefixes = list(data.get("paths") or data.get("prefixes") or [])
+        patterns = list(data.get("patterns") or [])
+    else:
+        raise ValueError("忽略清单应为 JSON 数组或对象")
+    for p in prefixes:
+        s = str(p).strip()
+        if s:
+            IGNORE_PREFIXES.append(os.path.abspath(os.path.expanduser(s)))
+    for p in patterns:
+        s = str(p).strip()
+        if s:
+            IGNORE_PATTERNS.append(os.path.abspath(os.path.expanduser(s)))
+    return len(IGNORE_PREFIXES) + len(IGNORE_PATTERNS)
+
+
 def is_excluded(path):
-    """是否应剔除该路径（用户指定保留 or 工具链本体）。"""
-    for k in KEEP_PREFIXES + ALWAYS_PROTECTED:
+    """是否应剔除该路径（工具链本体 / 临时保留 / 持久化忽略清单）。"""
+    for k in KEEP_PREFIXES + ALWAYS_PROTECTED + IGNORE_PREFIXES:
         if _under(path, k):
+            return True
+    try:
+        ap = os.path.abspath(os.path.expanduser(path))
+    except Exception:
+        return False
+    for pat in IGNORE_PATTERNS:
+        if fnmatch.fnmatchcase(ap, pat):
             return True
     return False
 
@@ -107,13 +146,9 @@ def detect_macos():
         info["family"] = str(parts[0])
         info["major_num"] = float(parts[0])
 
-    # 友好名称
-    NAMES = {
-        "10.13": "High Sierra", "10.14": "Mojave", "10.15": "Catalina",
-        "11": "Big Sur", "12": "Monterey", "13": "Ventura",
-        "14": "Sonoma", "15": "Sequoia",
-    }
-    info["name"] = NAMES.get(info["family"], "macOS %s" % ver)
+    # 友好名称（规则库 defaults.macos_names）
+    names = RULES["defaults"]["macos_names"] if RULES else {}
+    info["name"] = names.get(info["family"], "macOS %s" % ver)
 
     # 芯片
     try:
@@ -132,18 +167,48 @@ def detect_macos():
     return info
 
 
-# macOS 版本 -> Mail 数据目录版本号（~/Library/Mail/Vx）
-MAIL_V = {
-    "10.7": "V2", "10.8": "V2", "10.9": "V2",
-    "10.10": "V3", "10.11": "V4", "10.12": "V5",
-    "10.13": "V6", "10.14": "V7", "10.15": "V8",
-    "11": "V9", "12": "V10", "13": "V10", "14": "V10", "15": "V10",
-}
-
-
 # ---------------------------------------------------------------------------
 # 体积统计工具
 # ---------------------------------------------------------------------------
+def detect_mail_version():
+    """优先从 Mail/PersistenceInfo.plist 读 LastUsedVersionDirectoryName。
+
+    CleanMyMac 5.7.4 MailboxService.framework 就是这么做的；比按 macOS 版本硬映射更可靠
+    （升级/迁移后 V 目录可能不一致）。失败时退化为「已有的最大 V<n> 目录」。
+    """
+    plist = resolve(RULES["collectors"]["mail_persistence_plist"], CTX, RULES)
+    last_key = RULES["collectors"]["mail_last_version_key"]
+    if os.path.isfile(plist):
+        try:
+            r = subprocess.run(
+                ["/usr/libexec/PlistBuddy", "-c",
+                 "Print :%s" % last_key, plist],
+                capture_output=True, text=True, timeout=10)
+            v = r.stdout.strip()
+            if mail_version_pattern().fullmatch(v):
+                return v
+        except (OSError, subprocess.SubprocessError):
+            pass
+    base = os.path.dirname(plist)
+    try:
+        found = [d for d in os.listdir(base) if mail_version_pattern().fullmatch(d)]
+        if found:
+            return sorted(found, key=lambda s: int(s[1:]))[-1]
+    except OSError:
+        pass
+    return None
+
+
+def collect_ai_tool_junk():
+    """只收 AI 工具的缓存/日志/遥测，不碰配置、技能、插件本体与可执行文件。"""
+    items = []
+    for rel in RULES["collectors"]["ai_tool_junk_rel"]:
+        p = os.path.join(HOME, rel)
+        if os.path.lexists(p) and not os.path.islink(p):
+            items.append({"path": p, "bytes": du(p), "note": rel})
+    return items
+
+
 def du(path):
     """递归计算目录/文件字节数。失败返回 0。"""
     total = 0
@@ -248,8 +313,7 @@ def collect_named_dirs(base_dirs, names, max_depth=2):
     names = set(names)
     # 位于这些「环境/依赖」目录内部的同名子目录不算过程产物，一律跳过——
     # 否则会把 venv 的 bin/（含解释器入口）误当成 C++ 构建产物等，删了会破坏环境本体。
-    guards = {".venv", "venv", "env", "virtualenv", "node_modules", "vendor",
-              "target", "site-packages", "__pycache__", ".git"}
+    guards = NAMED_DIR_GUARDS
     items = []
     for base in base_dirs:
         if not os.path.isdir(base):
@@ -305,7 +369,7 @@ def docker_env_path():
     """Docker Desktop 的 CLI 常在 PATH 外，补上常见位置。"""
     global _DOCKER_PATH
     if _DOCKER_PATH is None:
-        cand = [os.path.join(HOME, ".docker", "bin"), "/usr/local/bin", "/opt/homebrew/bin"]
+        cand = resolve(RULES["defaults"]["docker_cli_candidates"], CTX, RULES)
         _DOCKER_PATH = os.pathsep.join(cand + [os.environ.get("PATH", "")])
     return _DOCKER_PATH
 
@@ -348,7 +412,7 @@ def collect_docker_build_cache():
             row = json.loads(line)
         except ValueError:
             continue
-        if str(row.get("Type", "")).lower() != "build cache":
+        if str(row.get("Type", "")).lower() != RULES["collectors"]["docker_build_cache_type"]:
             continue
         b = parse_human_size(row.get("Reclaimable", ""))
         if b <= 0:
@@ -357,7 +421,7 @@ def collect_docker_build_cache():
             "kind": "command",
             "path": "(docker build cache)",
             "bytes": b,
-            "cmd": ["builder", "prune", "-af"],
+            "cmd": list(RULES["collectors"]["docker_commands"]["build_cache_prune"]),
             "note": "%s 条构建缓存记录。只影响下次构建速度，不影响镜像/容器/数据卷。"
                     % row.get("TotalCount", "?"),
         }]
@@ -406,7 +470,8 @@ def collect_docker_unused_images():
             "kind": "command",
             "path": "(docker image) %s [%s]" % (label, iid[:12]),
             "bytes": g["size"],
-            "cmd": ["image", "rm", iid],
+            "cmd": [x.replace("{ID}", iid)
+                    for x in RULES["collectors"]["docker_commands"]["image_rm"]],
             "note": "无容器引用。删除后如需再用须重新 pull / build。",
         })
     items.sort(key=lambda x: x["bytes"], reverse=True)
@@ -417,12 +482,14 @@ def tm_status():
     """Time Machine 开关与快照概览（全部只读）。"""
     st = {}
     out, rc = run_cmd(["defaults", "read",
-                       "/Library/Preferences/com.apple.TimeMachine.plist", "AutoBackup"])
+                       resolve(RULES["collectors"]["tm_autobackup_plist"], CTX, RULES),
+                       RULES["collectors"]["tm_autobackup_key"]])
     # 注意：0 = 关闭，1 = 开启；读不到（键不存在）说明从未配置过
     st["auto_backup"] = (out.strip() == "1") if rc == 0 else None
     out, rc = run_cmd(["tmutil", "listlocalsnapshots", "/"], timeout=20)
+    prefix = RULES["collectors"]["tm_snapshot_prefix"]
     st["snapshot_count"] = len([ln for ln in out.splitlines()
-                                if ln.strip().startswith("com.apple.TimeMachine.")]) if rc == 0 else None
+                                if ln.strip().startswith(prefix)]) if rc == 0 else None
     out, rc = run_cmd(["diskutil", "apfs", "listSnapshots", "/System/Volumes/Data"], timeout=20)
     st["data_volume"] = out.strip() if rc == 0 else ""
     return st
@@ -433,18 +500,20 @@ def collect_tm_snapshots():
     out, rc = run_cmd(["tmutil", "listlocalsnapshots", "/"], timeout=20)
     items = []
     if rc == 0:
+        prefix = RULES["collectors"]["tm_snapshot_prefix"]
+        suffix = RULES["collectors"]["tm_snapshot_local_suffix"]
         for ln in out.splitlines():
             ln = ln.strip()
-            if not ln.startswith("com.apple.TimeMachine."):
+            if not ln.startswith(prefix):
                 continue
-            stamp = ln[len("com.apple.TimeMachine."):]
-            if stamp.endswith(".local"):
-                stamp = stamp[:-len(".local")]
+            stamp = ln[len(prefix):]
+            if stamp.endswith(suffix):
+                stamp = stamp[:-len(suffix)]
             items.append({
                 "kind": "manual",
                 "path": "(tm snapshot) %s" % ln,
                 "bytes": 0,
-                "manual": "sudo tmutil deletelocalsnapshots %s" % stamp,
+                "manual": RULES["collectors"]["tm_snapshot_delete"].replace("{STAMP}", stamp),
                 "note": "APFS 快照与系统共享数据块，体积无法单独计量；读操作不需要 sudo，删除需要。",
             })
     return items
@@ -456,482 +525,18 @@ def collect_tm_snapshots():
 # severity: safe=可放心清理；caution=清理安全但建议确认；system=系统级需 sudo
 # scope: user=用户级（移入 ~/.Trash 即可）；system=系统级（需 --system --sudo）
 def build_categories(mac):
-    fam = mac["family"]
-    sealed = mac["sealed_system"]
-    asil = mac["apple_silicon"]
-
-    mail_v = MAIL_V.get(fam, "V10")
-    mail_dir = os.path.join(HOME, "Library", "Mail", mail_v)
-
+    """从规则库解析类目；条件根路径按当前 macOS 环境展开。"""
+    global CTX
+    mail_v = (detect_mail_version()
+              or RULES["defaults"]["mail_v"].get(
+                  mac["family"], RULES["defaults"]["mail_v_default"]))
+    local_ctx = make_context(mac, mail_v, RULES)
+    CTX = local_ctx  # 其余收集器共用同一上下文
     cats = []
-
-    # user_cache 是 ~/Library/Caches 的「兜底」收集器；专用类目（Homebrew/浏览器/QuickLook/字体）
-    # 会独占其下的特定子目录，避免同一份字节被重复计入多个类目、且清理时父目录先移走导致子项被静默跳过。
-    cache_home = os.path.join(HOME, "Library", "Caches")
-    user_cache_exclude = {
-        os.path.join(cache_home, "Homebrew"),                          # -> homebrew_cache
-        os.path.join(cache_home, "com.apple.Safari"),                  # -> browser_cache
-        os.path.join(cache_home, "Firefox"),                           # -> browser_cache
-        os.path.join(cache_home, "Google"),                            # -> browser_cache (Chrome)
-        os.path.join(cache_home, "Microsoft"),                         # -> browser_cache (Edge)
-        os.path.join(cache_home, "com.apple.QuickLook.thumbnails"),    # -> quicklook_cache
-        os.path.join(cache_home, "com.apple.fonts"),                   # -> font_cache
-        os.path.join(cache_home, "electron"),                          # -> npm_junk (Electron)
-        os.path.join(cache_home, "electron-builder"),                  # -> npm_junk (Electron)
-        os.path.join(cache_home, "Yarn"),                              # -> npm_junk
-        os.path.join(cache_home, "composer"),                          # -> php_junk
-        os.path.join(cache_home, "ccache"),                            # -> cpp_junk
-    }
-
-    # 1. 用户缓存
-    cats.append({
-        "id": "user_cache", "name": "用户缓存", "severity": "safe", "scope": "user",
-        "desc": "~/Library/Caches 下各 App 的缓存（不含已归属专用类目者），可安全清理（下次打开 App 会重建）。",
-        "collector": "dir_top",
-        "roots": [cache_home],
-        "exclude": list(user_cache_exclude),
-    })
-
-    # 2. 系统缓存（注意：Catalina+ 系统卷密封只读，/System/Library/Caches 不可动）
-    sys_roots = [os.path.join(os.sep, "Library", "Caches")]
-    if sealed:
-        sys_roots.append(os.path.join(os.sep, "System", "Volumes", "Data", "Library", "Caches"))
-    cats.append({
-        "id": "system_cache", "name": "系统缓存（需 sudo）", "severity": "system", "scope": "system",
-        "desc": "/Library/Caches 下的系统级缓存。Catalina 及以上系统卷只读，/System/Library/Caches 不在清理范围。",
-        "collector": "dir_top",
-        "roots": sys_roots,
-    })
-
-    # 3. 用户日志
-    cats.append({
-        "id": "user_logs", "name": "用户日志", "severity": "safe", "scope": "user",
-        "desc": "~/Library/Logs 下的崩溃/运行日志，可清理。",
-        "collector": "dir_top",
-        "roots": [os.path.join(HOME, "Library", "Logs")],
-    })
-
-    # 4. 系统日志
-    cats.append({
-        "id": "system_logs", "name": "系统日志（需 sudo）", "severity": "system", "scope": "system",
-        "desc": "/Library/Logs 与 /var/log 下的系统日志。",
-        "collector": "dir_top",
-        "roots": [os.path.join(os.sep, "Library", "Logs"),
-                  os.path.join(os.sep, "var", "log")],
-    })
-
-    # 5. 废纸篓
-    cats.append({
-        "id": "trash", "name": "废纸篓", "severity": "safe", "scope": "user",
-        "desc": "~/.Trash 中尚未清空的已删除文件。",
-        "collector": "dir_whole",
-        "roots": [os.path.join(HOME, ".Trash")],
-    })
-
-    # 6. 不完整下载（下载中断残留）
-    cats.append({
-        "id": "broken_downloads", "name": "不完整下载", "severity": "safe", "scope": "user",
-        "desc": "~/Downloads 下 *.download / *.part / *.crdownload / *.partial 等下载残留。",
-        "collector": "globs", "max_depth": 2,
-        "patterns": ["*.download", "*.part", "*.crdownload", "*.partial", "*.tmp", "*.opdownload"],
-        "roots": [os.path.join(HOME, "Downloads")],
-    })
-
-    # 7. 安装镜像 / 安装包（大体积）
-    cats.append({
-        "id": "dmg_installers", "name": "安装镜像/安装包", "severity": "safe", "scope": "user",
-        "desc": "~/Downloads 下体积较大的 .dmg/.iso/.pkg/.app(安装器) 等，可归档或删除。",
-        "collector": "globs", "max_depth": 2,
-        "patterns": ["*.dmg", "*.iso", "*.pkg", "*.dmgpart", "Install macOS*.app"],
-        "roots": [os.path.join(HOME, "Downloads")],
-    })
-
-    # 8. 邮件垃圾（版本相关：Vx 目录）
-    cats.append({
-        "id": "mail_junk", "name": "邮件垃圾（版本相关）", "severity": "caution", "scope": "user",
-        "desc": "Mail 的附件缓存、Envelope Index 与 Mail Downloads（当前版本 %s）。" % mail_v,
-        "collector": "custom_mail",
-        "roots": [mail_dir, os.path.join(HOME, "Library", "Mail Downloads")],
-    })
-
-    # 9. Xcode / 开发者垃圾
-    dev = os.path.join(HOME, "Library", "Developer")
-    xcode_roots = [
-        os.path.join(dev, "Xcode", "DerivedData"),
-        os.path.join(dev, "Xcode", "Archives"),
-        os.path.join(dev, "Xcode", "iOS DeviceSupport"),
-        os.path.join(dev, "Xcode", "Products"),
-        os.path.join(HOME, "Library", "Developer", "CoreSimulator", "Caches"),
-        os.path.join(HOME, "Library", "Developer", "CoreSimulator", "Devices"),
-    ]
-    cats.append({
-        "id": "xcode_junk", "name": "Xcode/开发者垃圾", "severity": "caution", "scope": "user",
-        "desc": "DerivedData、Archives、iOS DeviceSupport、模拟器缓存（重装/清理 Xcode 前可清）。",
-        "collector": "dir_top_multi",
-        "roots": xcode_roots,
-    })
-
-    # 10. iOS 备份
-    cats.append({
-        "id": "ios_backups", "name": "iOS 备份", "severity": "caution", "scope": "user",
-        "desc": "~/Library/Application Support/MobileSync/Backup 下的旧设备备份（删除将丢失该备份）。",
-        "collector": "dir_top",
-        "roots": [os.path.join(HOME, "Library", "Application Support", "MobileSync", "Backup")],
-    })
-
-    # 11. 容器缓存（App Store / 沙盒 App）
-    cats.append({
-        "id": "containers_cache", "name": "容器缓存", "severity": "safe", "scope": "user",
-        "desc": "~/Library/Containers 与 Group Containers 下各 App 的 Caches。",
-        "collector": "custom_containers",
-        "roots": [os.path.join(HOME, "Library", "Containers"),
-                  os.path.join(HOME, "Library", "Group Containers")],
-    })
-
-    # 12. 浏览器缓存
-    cats.append({
-        "id": "browser_cache", "name": "浏览器缓存", "severity": "safe", "scope": "user",
-        "desc": "Safari / Chrome / Firefox / Edge 的缓存与历史缓存。",
-        "collector": "custom_browser",
-        "roots": [],
-    })
-
-    # 13. 应用状态保存
-    cats.append({
-        "id": "saved_state", "name": "应用残留状态", "severity": "safe", "scope": "user",
-        "desc": "~/Library/Saved Application State（App 上次退出时的窗口状态）。",
-        "collector": "dir_top",
-        "roots": [os.path.join(HOME, "Library", "Saved Application State")],
-    })
-
-    # 14. Quick Look 缩略图缓存
-    cats.append({
-        "id": "quicklook_cache", "name": "Quick Look 缓存", "severity": "safe", "scope": "user",
-        "desc": "QuickLook 缩略图生成缓存。",
-        "collector": "dir_top",
-        "roots": [os.path.join(HOME, "Library", "Caches", "com.apple.QuickLook.thumbnails")],
-    })
-
-    # 15. Docker 垃圾
-    docker_roots = [
-        os.path.join(HOME, "Library", "Containers", "com.docker.docker", "Data", "vms"),
-        os.path.join(HOME, ".docker"),
-    ]
-    if sealed is False:
-        docker_roots.append(os.path.join(os.sep, "Library", "Containers", "com.docker.docker"))
-    cats.append({
-        "id": "docker_junk", "name": "Docker 垃圾", "severity": "caution", "scope": "user",
-        "desc": "Docker 虚拟机磁盘镜像（Docker.raw 稀疏文件）与 CLI 缓存（清理前确认无运行中容器）。"
-                "⚠️ 该体积与「Docker 构建缓存」「Docker 未使用镜像」重叠（后者就装在这个 raw 文件里），"
-                "不要相加；正确顺序是先用后两个类目回收内部资源，raw 才会随之收缩。",
-        "collector": "dir_top_multi",
-        "roots": docker_roots,
-    })
-
-    # 16. Homebrew 缓存
-    hb_roots = [os.path.join(HOME, "Library", "Caches", "Homebrew")]
-    if asil:
-        hb_roots.append(os.path.join(os.sep, "opt", "homebrew", "var", "cache", "homebrew"))
-    else:
-        hb_roots.append(os.path.join(os.sep, "usr", "local", "var", "cache", "homebrew"))
-    cats.append({
-        "id": "homebrew_cache", "name": "Homebrew 缓存", "severity": "safe", "scope": "user",
-        "desc": "Homebrew 下载的源码包/ bottled 缓存。",
-        "collector": "dir_top",
-        "roots": hb_roots,
-    })
-
-    # 17. 字体缓存
-    font_roots = [os.path.join(HOME, "Library", "Caches", "com.apple.fonts")]
-    if sealed is False:
-        font_roots.append(os.path.join(os.sep, "Library", "Caches", "com.apple.fonts"))
-    cats.append({
-        "id": "font_cache", "name": "字体缓存", "severity": "safe", "scope": "user",
-        "desc": "系统/用户字体注册缓存（重建后自动生成）。",
-        "collector": "dir_top",
-        "roots": font_roots,
-    })
-
-    # 18. Rosetta 2 缓存（仅 Apple Silicon, macOS 11+）
-    if asil and mac["major_num"] >= 11:
-        cats.append({
-            "id": "rosetta_cache", "name": "Rosetta 2 缓存（需 sudo）", "severity": "system", "scope": "system",
-            "desc": "Apple Silicon 上运行 Intel 应用的转译缓存 /Library/Apple/usr/libexec/oah。",
-            "collector": "dir_whole",
-            "roots": [os.path.join(os.sep, "Library", "Apple", "usr", "libexec", "oah"),
-                      os.path.join(os.sep, "var", "db", "oah")],
-        })
-
-    # 19. npm 环境垃圾（缓存 + 可重建的 node_modules，逐目录确认）
-    # 注意 ~/.npm 的大头常是 _npx（npx 临时下载的完整包，MCP server 常驻几十 MB），
-    # 而 `npm cache clean --force` 只清 _cacache、清不掉 _npx —— 必须整目录。
-    npm_cache_roots = [
-        os.path.join(HOME, ".npm"),
-        os.path.join(HOME, ".cache", "yarn"),
-        os.path.join(HOME, ".cache", "pnpm"),
-        os.path.join(HOME, ".pnpm-store"),
-        os.path.join(HOME, ".node-gyp"),          # 编译头文件，删后重装原生模块会重新下载
-        # Electron 生态：运行时下载缓存与 electron-builder 打包缓存（打包几个平台可达数 GB）
-        os.path.join(HOME, ".electron"),
-        os.path.join(HOME, ".cache", "electron"),
-        os.path.join(HOME, ".cache", "electron-builder"),
-        os.path.join(cache_home, "electron"),
-        os.path.join(cache_home, "electron-builder"),
-        os.path.join(cache_home, "Yarn"),         # yarn 在 macOS 的默认缓存位置
-    ]
-    cats.append({
-        "id": "npm_junk", "name": "npm 环境垃圾", "severity": "caution", "scope": "user",
-        "desc": "npm/yarn/pnpm 缓存（~/.npm 含 _npx/_cacache/_prebuilds/_logs、~/.node-gyp、"
-                "~/Library/Caches/Yarn）与 Electron 运行时/打包缓存（~/.electron、"
-                "~/.cache 与 ~/Library/Caches 下的 electron、electron-builder），"
-                "以及常用开发目录下可重建的 node_modules。"
-                "不包含 ~/Library/pnpm/global（全局包）与 ~/.yarn/lib（本体程序）。删除前需逐目录单独确认。",
-        "per_item_confirm": True,
-        "collector": "custom_npm",
-        "roots": npm_cache_roots,
-        "dev_bases": DEV_BASES,
-    })
-
-    # 20. Python 环境垃圾（缓存 + 虚拟环境，逐目录确认）
-    conda_bases = [os.path.join(HOME, "miniconda3"), os.path.join(HOME, "anaconda3"),
-                   os.path.join(HOME, "opt", "miniconda3"), os.path.join(HOME, "opt", "anaconda3")]
-    python_cache_roots = [
-        os.path.join(HOME, ".cache", "pip"),
-        os.path.join(HOME, "Library", "Caches", "pip"),
-        os.path.join(HOME, ".cache", "uv"),       # 下载缓存，下次 uv 调用会重建
-        os.path.join(HOME, ".virtualenvs"),
-        os.path.join(HOME, ".pyenv", "cache"),    # pyenv 下载的源码包归档（装完版本即可清）
-    ]
-    for cb in conda_bases:
-        python_cache_roots.append(os.path.join(cb, "pkgs"))
-    cats.append({
-        "id": "python_junk", "name": "Python 环境垃圾", "severity": "caution", "scope": "user",
-        "desc": "pip/uv 缓存、virtualenvwrapper/pyenv/conda 虚拟环境与包缓存。"
-                "删除虚拟环境将丢失其中安装的包（可重建）。"
-                "不含托管解释器（~/.workbuddy/binaries/python、~/.local/share/uv/python）。删除前需逐目录单独确认。",
-        "per_item_confirm": True,
-        "collector": "custom_python",
-        "roots": python_cache_roots,
-        "conda_bases": conda_bases,
-        "dev_bases": DEV_BASES,
-    })
-
-    # 21. Docker 构建缓存（命令式：docker builder prune）
-    cats.append({
-        "id": "docker_build_cache", "name": "Docker 构建缓存", "severity": "caution", "scope": "user",
-        "desc": "Docker 的 BuildKit 构建缓存（docker system df 的 Build Cache）。"
-                "回收只影响下次构建速度，不动镜像/容器/数据卷。需逐项确认。",
-        "per_item_confirm": True,
-        "collector": "custom_docker_builder",
-        "roots": [],
-    })
-
-    # 22. Docker 未被使用的镜像（命令式：docker image rm）
-    cats.append({
-        "id": "docker_unused_images", "name": "Docker 未使用镜像", "severity": "caution", "scope": "user",
-        "desc": "没有任何容器（含已停止）引用的镜像，按镜像 ID 归并。删除后如需再用须重新 pull/build。需逐项确认。",
-        "per_item_confirm": True,
-        "collector": "custom_docker_images",
-        "roots": [],
-    })
-
-    # 23. Time Machine 本地快照（manual：写操作需 sudo + 完全磁盘访问权限，只能交用户执行）
-    cats.append({
-        "id": "tm_local_snapshots", "name": "Time Machine 本地快照", "severity": "caution", "scope": "user",
-        "desc": "APFS 本地快照（tmutil listlocalsnapshots）。只在自动备份开启期间生成，"
-                "系统需要空间时会自动回收。删除命令需 sudo 且调用方须持有完全磁盘访问权限 —— 只能由用户在自己终端执行。",
-        "per_item_confirm": True,
-        "collector": "custom_tm",
-        "roots": [],
-    })
-
-    # ------------------------------------------------------------------
-    # 临时文件（按权限拆两类：用户 $TMPDIR 与系统 /private/tmp）
-    # 只收「超过 min_age_days 天未修改」的顶层项 —— 近期改动的一律跳过。
-    # ------------------------------------------------------------------
-    cats.append({
-        "id": "tmp_user", "name": "临时文件（用户）", "severity": "safe", "scope": "user",
-        "desc": "用户临时目录（$TMPDIR）下超过 7 天未修改的文件/目录。"
-                "近期改动的自动跳过，避免删掉正在运行进程正在用的文件。",
-        "collector": "custom_tmp", "min_age_days": 7,
-        "roots": [tempfile.gettempdir()],
-    })
-
-    cats.append({
-        "id": "tmp_system", "name": "临时文件（系统，需 sudo）", "severity": "system", "scope": "system",
-        "desc": "/private/tmp 下超过 7 天未修改的顶层项。近期改动的自动跳过。清理需 sudo。",
-        "collector": "custom_tmp", "min_age_days": 7,
-        "roots": [os.path.join(os.sep, "private", "tmp")],
-    })
-
-    # 系统诊断数据（遥测/崩溃/能耗），系统会自动重建
-    cats.append({
-        "id": "system_diagnostics", "name": "系统诊断数据（需 sudo）", "severity": "system", "scope": "system",
-        "desc": "/private/var/db 下的 diagnostics、PowerLog、DiagnosticPipeline（崩溃与能耗遥测数据）。"
-                "系统会按需自动重建，删除后不影响功能。",
-        "collector": "dir_whole",
-        "roots": [os.path.join(os.sep, "private", "var", "db", "diagnostics"),
-                  os.path.join(os.sep, "private", "var", "db", "PowerLog"),
-                  os.path.join(os.sep, "private", "var", "db", "DiagnosticPipeline")],
-    })
-
-    # 休眠镜像：大小≈内存容量，系统会重建
-    cats.append({
-        "id": "sleepimage", "name": "休眠镜像（需 sudo）", "severity": "caution", "scope": "system",
-        "desc": "/private/var/vm/sleepimage，大小约等于物理内存。删除后系统会在下次休眠时重建。"
-                "FileVault 开启时它承担安全休眠，删前请确认可接受休眠行为变化。",
-        "collector": "dir_whole",
-        "roots": [os.path.join(os.sep, "private", "var", "vm", "sleepimage")],
-    })
-
-    # Rust：只清 registry/git 与 rustup 的 downloads/tmp，绝不碰 toolchains
-    cats.append({
-        "id": "rust_cache", "name": "Rust 缓存", "severity": "safe", "scope": "user",
-        "desc": "~/.cargo/registry、~/.cargo/git 与 ~/.rustup 的 downloads/tmp。"
-                "不含 ~/.rustup/toolchains（工具链本体，删了要重装 rustup）。",
-        "collector": "dir_whole",
-        "roots": [os.path.join(HOME, ".cargo", "registry"),
-                  os.path.join(HOME, ".cargo", "git"),
-                  os.path.join(HOME, ".rustup", "downloads"),
-                  os.path.join(HOME, ".rustup", "tmp")],
-    })
-
-    # Rust 过程产物：各 cargo 项目的 target/ 构建目录（cargo build 可重建，逐目录确认）
-    cats.append({
-        "id": "rust_junk", "name": "Rust 构建产物（target/）", "severity": "caution", "scope": "user",
-        "desc": "常用开发目录下各 cargo 项目的 target/ 构建目录（debug/release 中间产物，"
-                "单项目动辄数 GB，cargo build 可重建）。"
-                "不含 ~/.cargo/registry 等依赖缓存（见 rust_cache）。删除前需逐目录单独确认。",
-        "per_item_confirm": True,
-        "collector": "custom_named_dirs",
-        "names": ["target"],
-        "dev_bases": DEV_BASES,
-    })
-
-    # C/C++ 开发环境：编译/包缓存（ccache/sccache/Conan/vcpkg）+ 构建产物（逐目录确认）
-    cpp_cache_roots = [
-        os.path.join(HOME, ".ccache"),
-        os.path.join(cache_home, "ccache"),
-        os.path.join(HOME, ".cache", "ccache"),
-        os.path.join(HOME, ".cache", "sccache"),   # 分布式编译缓存（Rust/C++ 通用）
-        os.path.join(HOME, ".conan", "data"),      # Conan 1 包缓存（profiles 等用户配置不在内）
-        os.path.join(HOME, ".conan2", "p"),        # Conan 2 包缓存（profiles 等用户配置不在内）
-        os.path.join(HOME, ".cache", "vcpkg"),     # vcpkg 二进制缓存与下载归档
-    ]
-    cats.append({
-        "id": "cpp_junk", "name": "C/C++ 环境垃圾", "severity": "caution", "scope": "user",
-        "desc": "编译与包管理缓存（ccache/sccache、Conan 1/2 包缓存、vcpkg 缓存）与常用开发目录下"
-                "可重建的构建产物目录（build/builddir/cmake-build-*/out/obj/bin/CMakeFiles）。"
-                "删后重新编译/构建即可恢复；注意 bin/out 也可能存放交付产物，删除前需逐目录单独确认。",
-        "per_item_confirm": True,
-        "collector": "custom_named_dirs",
-        "names": ["build", "builddir", "build-debug", "build-release",
-                  "cmake-build-debug", "cmake-build-release", "cmake-build-relwithdebinfo",
-                  "out", "obj", "bin", "CMakeFiles"],
-        "roots": cpp_cache_roots,
-        "dev_bases": DEV_BASES,
-    })
-
-    # PHP 开发环境：Composer 下载缓存 + vendor/ 依赖目录（逐目录确认）
-    php_cache_roots = [
-        os.path.join(HOME, ".composer", "cache"),      # COMPOSER_HOME/cache
-        os.path.join(HOME, ".cache", "composer"),      # XDG 缓存位置
-        os.path.join(cache_home, "composer"),          # macOS 上 XDG 缓存的真实位置
-    ]
-    cats.append({
-        "id": "php_junk", "name": "PHP 环境垃圾", "severity": "caution", "scope": "user",
-        "desc": "Composer 下载缓存（~/.composer/cache、~/.cache/composer、~/Library/Caches/composer）"
-                "与常用开发目录下可重建的 vendor/ 依赖目录（composer install 可重建）。"
-                "不含 PHP 本体与全局 bin。删除前需逐目录单独确认。",
-        "per_item_confirm": True,
-        "collector": "custom_named_dirs",
-        "names": ["vendor"],
-        "roots": php_cache_roots,
-        "dev_bases": DEV_BASES,
-    })
-
-    # AI 模型权重：单个模型动辄数 GB，重新下载成本高 → 逐项确认
-    cats.append({
-        "id": "ai_model_cache", "name": "AI 模型缓存", "severity": "caution", "scope": "user",
-        "desc": "HuggingFace / PyTorch / Ollama / LM Studio 下载的模型权重。"
-                "删除后需重新下载（动辄数 GB ~ 数十 GB）。需逐项确认。",
-        "per_item_confirm": True,
-        "collector": "dir_whole",
-        "roots": [os.path.join(HOME, ".cache", "huggingface"),
-                  os.path.join(HOME, ".cache", "torch"),
-                  os.path.join(HOME, ".ollama", "models"),
-                  os.path.join(HOME, ".cache", "lm-studio"),
-                  os.path.join(HOME, ".lmstudio", "models")],
-    })
-
-    # 通用 XDG 缓存（排除已归属专用类目的子目录）
-    cats.append({
-        "id": "xdg_cache", "name": "通用 XDG 缓存", "severity": "safe", "scope": "user",
-        "desc": "~/.cache 下各 CLI 工具的缓存（pip/uv/huggingface/torch/yarn/pnpm 等"
-                "已归属专用类目者除外）。",
-        "collector": "dir_top",
-        "roots": [os.path.join(HOME, ".cache")],
-        "exclude": [os.path.join(HOME, ".cache", x) for x in
-                    ("pip", "uv", "huggingface", "torch", "yarn", "pnpm", "lm-studio",
-                     "electron", "electron-builder", "ccache", "sccache", "vcpkg", "composer")],
-    })
-
-    # Ruby：只清 cache/specs，不含已安装 gem 本体
-    cats.append({
-        "id": "ruby_gem_cache", "name": "Ruby gem 缓存", "severity": "safe", "scope": "user",
-        "desc": "~/.gem 的 cache/specs 与 ~/.bundle/cache。不含已安装的 gem 本体。",
-        "collector": "dir_whole",
-        "roots": [os.path.join(HOME, ".gem", "cache"),
-                  os.path.join(HOME, ".gem", "specs"),
-                  os.path.join(HOME, ".bundle", "cache")],
-    })
-
-    # 其他语言/包管理器缓存（存在才出现）
-    cats.append({
-        "id": "misc_pkg_cache", "name": "其他包管理器缓存", "severity": "safe", "scope": "user",
-        "desc": "Maven ~/.m2/repository、Gradle ~/.gradle/caches、NuGet、SwiftPM、Ivy 的下载缓存。"
-                "（Composer 缓存已归属 php_junk。）",
-        "collector": "dir_whole",
-        "roots": [os.path.join(HOME, ".m2", "repository"),
-                  os.path.join(HOME, ".gradle", "caches"),
-                  os.path.join(HOME, ".nuget", "packages"),
-                  os.path.join(HOME, ".ivy2", "cache"),
-                  os.path.join(HOME, "Library", "Caches", "org.swift.swiftpm")],
-    })
-
-    # Docker 已停止容器（命令式）
-    cats.append({
-        "id": "docker_stopped_containers", "name": "Docker 已停止容器", "severity": "safe", "scope": "user",
-        "desc": "已退出（exited）的容器记录，执行 docker container prune -f 回收。"
-                "不动运行中容器、镜像与数据卷。需逐项确认。",
-        "per_item_confirm": True,
-        "collector": "custom_docker_containers", "roots": [],
-    })
-
-    # 外接卷废纸篓
-    cats.append({
-        "id": "external_trashes", "name": "外接卷废纸篓（需 sudo）", "severity": "caution", "scope": "system",
-        "desc": "/Volumes/*/.Trashes 下各外接磁盘的废纸篓项。清空后该盘上的这些文件不可恢复。",
-        "collector": "custom_external_trashes", "roots": [],
-    })
-
-    # iOS 模拟器设备镜像
-    cats.append({
-        "id": "simulator_devices", "name": "iOS 模拟器", "severity": "caution", "scope": "user",
-        "desc": "~/Library/Developer/CoreSimulator/Devices 下各模拟器设备镜像。"
-                "删除后需在 Xcode 里重新下载运行时。需逐项确认。",
-        "per_item_confirm": True,
-        "collector": "dir_top",
-        "roots": [os.path.join(HOME, "Library", "Developer", "CoreSimulator", "Devices")],
-    })
-
-    # Application Support 下的 Cache/Caches（非标准路径）
-    cats.append({
-        "id": "app_support_caches", "name": "应用支持目录缓存", "severity": "safe", "scope": "user",
-        "desc": "~/Library/Application Support/*/Caches —— 部分 App 不走标准 ~/Library/Caches。",
-        "collector": "custom_app_support_caches", "roots": [],
-    })
-
+    for raw in RULES["categories"]["categories"]:
+        cat = resolve_category(raw, local_ctx, RULES, mac)
+        if cat is not None:
+            cats.append(cat)
     return cats
 
 
@@ -943,9 +548,10 @@ def collect_custom_mail(roots):
     for r in roots:
         if not os.path.exists(r):
             continue
-        if os.path.isdir(r) and "Mail Downloads" not in r:
+        marker = RULES["collectors"]["mail_downloads_marker"]
+        if os.path.isdir(r) and marker not in r:
             # Mail 主目录：统计 Envelope Index 与 Attachments 子目录
-            for sub in ["Envelope Index", "Envelope Index-shm", "Envelope Index-wal", "Attachments"]:
+            for sub in RULES["collectors"]["mail_subdirs"]:
                 p = os.path.join(r, sub)
                 if os.path.exists(p):
                     items.append({"path": p, "bytes": du(p)})
@@ -977,20 +583,7 @@ def collect_custom_containers(roots):
 def collect_custom_browser(roots):
     items = []
     home = HOME
-    targets = [
-        # Safari
-        os.path.join(home, "Library", "Caches", "com.apple.Safari"),
-        os.path.join(home, "Library", "Safari", "Webpage Previews"),
-        os.path.join(home, "Library", "Safari", "History.db"),
-        # Chrome
-        os.path.join(home, "Library", "Caches", "Google", "Chrome"),
-        os.path.join(home, "Library", "Application Support", "Google", "Chrome", "Default", "Cache"),
-        # Firefox
-        os.path.join(home, "Library", "Caches", "Firefox"),
-        # Edge
-        os.path.join(home, "Library", "Caches", "Microsoft", "Edge"),
-        os.path.join(home, "Library", "Application Support", "Microsoft", "Edge", "Default", "Cache"),
-    ]
+    targets = resolve(RULES["collectors"]["browser_targets"], CTX, RULES)
     for t in targets:
         if os.path.exists(t):
             items.append({"path": t, "bytes": du(t)})
@@ -1038,6 +631,8 @@ def run_collector(cat, mac):
         return collect_external_trashes()
     if c == "custom_app_support_caches":
         return collect_app_support_caches()
+    if c == "custom_ai_tool_junk":
+        return collect_ai_tool_junk()
     return []
 
 
@@ -1047,9 +642,9 @@ def collect_custom_npm(cache_roots, dev_bases):
     for r in cache_roots:
         if os.path.exists(r):
             items.append({"path": r, "bytes": du(r)})
-    items.extend(collect_named_dirs(dev_bases, {"node_modules"}, max_depth=2))
+    items.extend(collect_named_dirs(dev_bases, set(RULES["collectors"]["npm_named_dirs"]), max_depth=2))
     items.sort(key=lambda x: x["bytes"], reverse=True)
-    return items[:400]
+    return items[:RULES["collectors"]["named_dirs_max_items"]]
 
 
 def collect_custom_python(cache_roots, conda_bases, dev_bases):
@@ -1070,7 +665,7 @@ def collect_custom_python(cache_roots, conda_bases, dev_bases):
             except OSError:
                 pass
     # pyenv-virtualenv: ~/.pyenv/versions/<ver>/envs/<name>
-    pyenv_versions = os.path.join(HOME, ".pyenv", "versions")
+    pyenv_versions = resolve(RULES["collectors"]["pyenv_versions_dir"], CTX, RULES)
     if os.path.isdir(pyenv_versions):
         try:
             with os.scandir(pyenv_versions) as it:
@@ -1087,9 +682,9 @@ def collect_custom_python(cache_roots, conda_bases, dev_bases):
             pass
     # 通用 venv 目录名
     items.extend(collect_named_dirs(
-        dev_bases, {".venv", "venv", "env", "virtualenv"}, max_depth=2))
+        dev_bases, set(RULES["collectors"]["python_named_dirs"]), max_depth=2))
     items.sort(key=lambda x: x["bytes"], reverse=True)
-    return items[:400]
+    return items[:RULES["collectors"]["named_dirs_max_items"]]
 
 
 def collect_custom_named_dirs(cache_roots, names, dev_bases):
@@ -1104,7 +699,7 @@ def collect_custom_named_dirs(cache_roots, names, dev_bases):
             items.append({"path": r, "bytes": du(r)})
     items.extend(collect_named_dirs(dev_bases, set(names), max_depth=2))
     items.sort(key=lambda x: x["bytes"], reverse=True)
-    return items[:400]
+    return items[:RULES["collectors"]["named_dirs_max_items"]]
 
 
 # ---------------------------------------------------------------------------
@@ -1166,7 +761,7 @@ def collect_docker_stopped_containers():
         "kind": "command",
         "path": "(已停止容器 %d 个)" % len(ids),
         "bytes": parse_human_size(size_txt),
-        "cmd": ["container", "prune", "-f"],
+        "cmd": list(RULES["collectors"]["docker_commands"]["container_prune"]),
         "note": "docker container prune -f：只删已停止容器，不动运行中容器与数据卷",
     }]
 
@@ -1178,7 +773,7 @@ def collect_external_trashes():
     """
     items = []
     uid = str(os.getuid())
-    vols = os.path.join(os.sep, "Volumes")
+    vols = resolve(RULES["collectors"]["volumes_root"], CTX, RULES)
     if not os.path.isdir(vols):
         return items
     try:
@@ -1186,7 +781,7 @@ def collect_external_trashes():
     except OSError:
         return items
     for v in names:
-        base = os.path.join(vols, v, ".Trashes")
+        base = os.path.join(vols, v, RULES["collectors"]["external_trash_dirname"])
         if not os.path.isdir(base):
             continue
         own = os.path.join(base, uid)
@@ -1216,7 +811,7 @@ def collect_app_support_caches():
                         continue
                 except OSError:
                     continue
-                for nm in ("Caches", "Cache"):
+                for nm in RULES["collectors"]["app_support_cache_names"]:
                     p = os.path.join(e.path, nm)
                     if os.path.isdir(p) and not os.path.islink(p):
                         items.append({"path": p, "bytes": du(p), "note": e.name})
@@ -1229,17 +824,9 @@ def collect_large_old(mac, min_gb, old_days):
     import time
     min_bytes = min_gb * 1024 ** 3
     cutoff = time.time() - old_days * 86400
-    scan_dirs = [
-        os.path.join(HOME, "Downloads"),
-        os.path.join(HOME, "Desktop"),
-        os.path.join(HOME, "Documents"),
-        os.path.join(HOME, "Movies"),
-        os.path.join(HOME, "Music"),
-        os.path.join(HOME, "Pictures"),
-        HOME,
-    ]
-    skip_sub = {".git", "node_modules", "Caches", "Containers", "Application Support",
-                "Mail", "Library", ".Trash", "DerivedData"}
+    rule = RULES["defaults"]["large_old_files"]
+    scan_dirs = resolve(rule["roots"], CTX, RULES)
+    skip_sub = set(resolve(rule["skip_sub"], CTX, RULES))
     hits = []
     for base in scan_dirs:
         if not os.path.isdir(base):
@@ -1258,35 +845,70 @@ def collect_large_old(mac, min_gb, old_days):
                 except OSError:
                     continue
     hits.sort(key=lambda x: x["bytes"], reverse=True)
-    return hits[:500]
+    return hits[:RULES["defaults"]["large_old_files"]["max_items"]]
 
 
 # ---------------------------------------------------------------------------
 # 主流程
 # ---------------------------------------------------------------------------
 def main():
+    global RULES, CTX, ALWAYS_PROTECTED, NAMED_DIR_GUARDS
+    global DOCKER_CANDIDATES, QUICK_SKIP_IDS, DEV_BASES
     ap = argparse.ArgumentParser(description="macOS 跨版本系统垃圾扫描器（只读）")
     ap.add_argument("--out", default=os.path.join(os.getcwd(), "macos_clean_manifest.json"),
                     help="manifest 输出路径（默认当前目录 macos_clean_manifest.json）")
     ap.add_argument("--categories", help="仅扫描指定类目 id（逗号分隔），默认全部")
-    ap.add_argument("--min-size", type=float, default=0.0,
-                    help="类目内单条明细低于此 MB 的忽略（默认 0，全部保留）")
-    ap.add_argument("--large-gb", type=float, default=1.0, help="大文件阈值（GB，默认 1）")
-    ap.add_argument("--old-days", type=int, default=90, help="旧文件阈值（天，默认 90）")
+    ap.add_argument("--rules-dir",
+                    help="规则库目录（默认 <skill>/rules；自定义目录可无 manifest）")
+    ap.add_argument("--min-size", type=float, default=None,
+                    help="类目内单条明细低于此 MB 的忽略（默认见 rules/defaults.json）")
+    ap.add_argument("--large-gb", type=float, default=None,
+                    help="大文件阈值 GB（默认见 rules/defaults.json）")
+    ap.add_argument("--old-days", type=int, default=None,
+                    help="旧文件阈值天数（默认见 rules/defaults.json）")
     ap.add_argument("--no-large", action="store_true", help="跳过「大文件/旧文件」扫描")
-    ap.add_argument("--tmp-days", type=int, default=7,
-                    help="临时文件只清超过此天数未修改的（默认 7，近期改动一律跳过）")
+    ap.add_argument("--tmp-days", type=int, default=None,
+                    help="临时文件只清超过此天数未修改的（默认见 rules/defaults.json）")
     ap.add_argument("--include-system", action="store_true",
                     help="包含系统级类目（扫描只读，清理需 sudo）")
     ap.add_argument("--no-docker", action="store_true",
                     help="跳过 Docker 命令式探测（Docker 未运行时更快）")
     ap.add_argument("--keep", action="append", default=[],
                     help="指定保留的目录前缀（可多次给），命中即从结果剔除")
+    ap.add_argument("--ignore-file",
+                    help="持久化忽略清单 JSON（paths/prefixes/patterns），对标 CleanMyMac Ignore List")
+    ap.add_argument("--quick", action="store_true",
+                    help="Smart Care 式快速巡检：跳过环境依赖/模拟器/大文件全盘遍历等重型类目")
     args = ap.parse_args()
 
+    try:
+        RULES = load_rules(args.rules_dir)
+    except RuleError as ex:
+        sys.stderr.write("❌ 规则库载入失败: %s\n" % ex)
+        raise SystemExit(2)
+
+    defaults = RULES["defaults"]["cli_defaults"]
+    for arg, key in (("min_size", "min_size"), ("large_gb", "large_gb"),
+                     ("old_days", "old_days"), ("tmp_days", "tmp_days")):
+        if getattr(args, arg) is None:
+            setattr(args, arg, defaults[key])
+
+    boot_ctx = make_context(None, None, RULES)
+    ALWAYS_PROTECTED = resolve(RULES["defaults"]["always_protected"], boot_ctx, RULES)
+    NAMED_DIR_GUARDS = set(RULES["defaults"]["named_dir_guards"])
+    DOCKER_CANDIDATES = resolve(RULES["defaults"]["docker_cli_candidates"], boot_ctx, RULES)
+    QUICK_SKIP_IDS = set(RULES["defaults"]["quick_skip_ids"])
+    DEV_BASES = resolve("@DEV_BASES", boot_ctx, RULES)
+
     KEEP_PREFIXES.extend(args.keep)
+    try:
+        ignored = load_ignore_file(args.ignore_file)
+    except Exception as ex:
+        sys.stderr.write("❌ 忽略清单读取失败: %s\n" % ex)
+        raise SystemExit(2)
 
     mac = detect_macos()
+    CTX = make_context(mac, None, RULES)
     cats = build_categories(mac)
     # 临时文件类目的时间阈值统一由 --tmp-days 决定
     for c in cats:
@@ -1294,6 +916,8 @@ def main():
             c["min_age_days"] = args.tmp_days
     if args.no_docker:
         cats = [c for c in cats if not c["collector"].startswith("custom_docker")]
+    if args.quick:
+        cats = [c for c in cats if c["id"] not in QUICK_SKIP_IDS]
 
     only = set(c.strip() for c in args.categories.split(",")) if args.categories else None
     min_bytes = args.min_size * 1024 ** 2
@@ -1327,16 +951,17 @@ def main():
         })
         manifest["grand_total_bytes"] += total
 
-    # 大文件/旧文件
-    if not args.no_large:
+    # 大文件/旧文件（遵守 --categories 过滤；类目定义来自 rules/defaults.json）
+    rlo = RULES["defaults"]["large_old_files"]
+    if not args.no_large and not args.quick and (only is None or rlo["id"] in only):
         hits = collect_large_old(mac, args.large_gb, args.old_days)
         hits = [h for h in hits if h["bytes"] >= min_bytes]
         total = sum(h["bytes"] for h in hits)
         manifest["categories"].append({
-            "id": "large_old_files", "name": "大文件/旧文件（>%gGB 且 %d天未改）" % (args.large_gb, args.old_days),
-            "severity": "caution", "scope": "user",
-            "desc": "用户目录下超过阈值且久未修改的文件，需人工确认是否删除。",
-            "per_item_confirm": False,
+            "id": rlo["id"],
+            "name": rlo["name_template"] % (args.large_gb, args.old_days),
+            "severity": rlo["severity"], "scope": rlo["scope"],
+            "desc": rlo["desc"], "per_item_confirm": rlo["per_item_confirm"],
             "total_bytes": total, "item_count": len(hits), "items": hits,
         })
         manifest["grand_total_bytes"] += total
@@ -1348,7 +973,14 @@ def main():
     print("macOS: %s (%s, %s)%s" % (
         mac["name"], mac["version"], mac["family"],
         ", Apple Silicon" if mac["apple_silicon"] else ""))
-    print("密封系统卷(只读): %s" % ("是" if mac["sealed_system"] else "否"))
+    print("密封系统卷(只读): %s%s" % (
+        "是" if mac["sealed_system"] else "否",
+        "  | 快速巡检模式" if args.quick else "",
+    ))
+    print("规则库: %s (%d 个类目定义)" % (
+        RULES["_dir"], len(RULES["categories"]["categories"])))
+    if args.ignore_file:
+        print("持久化忽略规则: %d 条" % ignored)
     print("-" * 60)
     for c in manifest["categories"]:
         flag = "  [系统]" if c["scope"] == "system" else ""
