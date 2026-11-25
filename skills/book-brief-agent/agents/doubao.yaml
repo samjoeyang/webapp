@@ -1,6 +1,6 @@
 interface:
   display_name: "精读一书智能体"
-  short_description: "把一本书蒸馏成几分钟精读稿，并可接力配音与视频成片"
+  short_description: "把一本书（默认全书，可指定单章/多章）蒸馏成几分钟精读稿，并可接力配音与视频成片"
   default_prompt: "使用 $book-brief-agent 帮我精读一本书，输出几分钟口播精读稿"
 
 policy:
