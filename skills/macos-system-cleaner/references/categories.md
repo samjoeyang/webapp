@@ -62,6 +62,7 @@
 | external_trashes | 外接卷废纸篓 | caution | system | `/Volumes/*/.Trashes/<uid>`。清空后该盘上这些文件不可恢复 |
 | simulator_devices | iOS 模拟器 | caution | user | `~/Library/Developer/CoreSimulator/Devices` 各设备镜像。**逐项确认**（删后需重新下载运行时） |
 | app_support_caches | 应用支持目录缓存 | safe | user | `~/Library/Application Support/*/Caches`（不走标准 `~/Library/Caches` 的 App） |
+| go_junk | Go 模块与校验缓存 | caution | user | `$GOPATH/pkg/mod`、`$GOPATH/pkg/sumdb`（默认 `~/go/`）。官方 `go clean -modcache` 可重建，离线删后需重新联网下载。不含 `$GOPATH/bin`（go install 可执行文件）、`$GOPATH/src`（源码）与 GOCACHE 构建缓存（归 user_cache）。**逐项确认** |
 | duplicates | 重复文件 | caution | user | 由 `clutter_scan.py` 生成（大小分桶 + SHA-256）；每组建议保留 1 份，其余逐项确认。默认不自动全选 |
 | similar_images | 相似图片 | caution | user | 由 `clutter_scan.py` 生成（sips 缩略图 + 9x8 dHash + 并查集）；不扫描 `*.photoslibrary` / `.app` 包内部 |
 
@@ -105,8 +106,8 @@ Mail 的数据目录随 macOS 大版本改变 `V` 编号，清理邮件索引/�
 - 扫描 `Downloads/Desktop/Documents/Movies/Music/Pictures` 及家目录顶层，跳过 `.git`、`node_modules`、`Caches`、`Mail`、`Library` 等重目录，避免误报与极慢遍历。
 - 阈值：`--large-gb`（默认 1GB）、`--old-days`（默认 90 天），结果按体积降序，最多 500 条。
 
-### 6. npm / Python / Rust / C++ / PHP 环境类目（逐目录确认）
-- `npm_junk`/`python_junk`/`rust_junk`/`cpp_junk`/`php_junk` 标记 `per_item_confirm=True`：
+### 6. npm / Python / Rust / C++ / PHP / Go 环境类目（逐目录确认）
+- `npm_junk`/`python_junk`/`rust_junk`/`cpp_junk`/`php_junk`/`go_junk` 标记 `per_item_confirm=True`：
   **每个目录删除前都必须单独确认**，不能整类目一键删除。
 - 开发目录基准（五类共用）：`Projects/projects/code/dev/Developer/work/workspace/Documents/Desktop/Downloads`
   （不存在则跳过），过程产物仅在深度 ≤2 内查找，避免极深遍历。

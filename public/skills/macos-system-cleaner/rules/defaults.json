@@ -19,7 +19,7 @@
   },
   "quick_skip_ids": [
     "xcode_junk", "ios_backups", "docker_junk", "npm_junk", "python_junk",
-    "rust_junk", "cpp_junk", "php_junk", "ai_model_cache", "simulator_devices",
+    "rust_junk", "cpp_junk", "php_junk", "go_junk", "ai_model_cache", "simulator_devices",
     "external_trashes", "docker_build_cache", "docker_unused_images",
     "docker_stopped_containers", "tm_local_snapshots", "tmp_system",
     "system_diagnostics", "sleepimage", "rosetta_cache"

@@ -1,11 +1,11 @@
 ---
 name: macos-system-cleaner
-version: 2.6.1
+version: 2.6.2
 display_name: macOS 系统清理与本地开发环境维护
 display_name_en: macOS System Cleaner & Local Dev Env Toolkit
 description_zh: 跨 macOS 版本的清理与运维工具箱：磁盘垃圾扫描清理（对标 CleanMyMac，含缓存/日志/邮件/Docker/Homebrew/Xcode/iOS 备份/npm/Python 虚拟环境）、Docker 构建缓存与未使用镜像回收、Time Machine 本地快照、本机工况（CPU/内存/网络/硬盘）、Docker 构建完成监控、Docker Desktop 卡死恢复、推送远程前的凭据体检、删项目目录前的风险核查、本地网页交付前验证、同源项目文档合并。默认移入回收站可恢复，破坏性操作一律逐项确认。
 description_en: Cross-version macOS cleanup & ops toolkit — CleanMyMac-style junk scanning, Docker build-cache/unused-image reclaim, Time Machine snapshots, duplicate/similar-image discovery, persistent ignore lists, performance maintenance guidance, system vitals (CPU/mem/net/disk), Docker build watching, Docker Desktop recovery, pre-push secret audit, project-dir deletion risk audit, local webapp verification, and sibling-repo doc merging. Recoverable by default; destructive steps always confirmed per item. Rule data lives in externalized plain JSON (checksummed).
-description: macOS 清理与本地开发环境维护工具箱（可被任意支持 Skill 的智能体安装使用）。①清理：自动探测 macOS 版本/芯片并按版本映射路径（Mail 的 Vx 目录、Catalina+ 密封系统卷、Apple Silicon Rosetta、Docker Desktop 差异），覆盖缓存/日志/废纸篓/安装包/邮件垃圾/Xcode 派生数据/iOS 备份/容器与浏览器缓存/Homebrew/字体缓存/应用支持目录缓存/大文件旧文件，以及 npm 生态（含 Electron 运行时与打包缓存）与 node_modules、Python 虚拟环境与 pip/uv/pyenv 缓存、Rust 依赖缓存与 cargo target/ 构建产物、C/C++ 编译与包缓存（ccache/sccache/Conan/vcpkg）与 cmake/make 构建产物、PHP/Composer 缓存与 vendor/、Ruby/其他包管理器缓存、Docker 构建缓存与未使用镜像与已停止容器、Time Machine 本地快照、临时文件（用户 $TMPDIR 与系统 /private/tmp，按 7 天未修改过滤）、系统诊断数据、休眠镜像、AI 模型缓存（HuggingFace/Ollama/LM Studio）、iOS 模拟器、外接卷废纸篓；②巡检：本机工况只读仪表盘（CPU/内存/网络/硬盘/SMART）；③运维：Docker 构建完成监控与通知、Docker Desktop 卡死诊断恢复；④安全与交付：首次推送前的凭据体检与历史清理、删除本地项目目录前的风险核查、本地网页交付前的浏览器验证、同源项目需求/设计文档合并。默认移入回收站（可恢复），系统级需 sudo，npm/Python/Rust/C++/PHP/Docker/快照/模型/模拟器类目逐项目确认。当用户说"清理mac垃圾/释放磁盘空间/CleanMyMac/找出能删的大文件/清理缓存日志/清理临时文件/清理系统诊断/清理rust缓存/清理rust构建产物/清理cargo/清理c++构建缓存/清理cmake构建/清理ccache/清理composer/清理php vendor/清理electron缓存/清理AI模型/清理AI工具缓存/清理模拟器/清理外接盘废纸篓/找重复文件/清理相似图片/查大文件/设置忽略清单/性能维护任务/应用卸载残留/查看本机状态/系统监控/CPU占用/内存压力/硬盘空间/清理npm缓存/清理node_modules/清理python虚拟环境/清理conda环境/清理pip缓存/清理docker构建缓存/清理未使用镜像/清理停止的容器/清理Time Machine快照/关掉时间机器/docker构建完成告诉我/Docker起不来/docker卡死/推送到GitHub前检查有没有泄露密钥/删掉这个项目目录/网页跑起来看一眼/合并两个项目的文档/改扫描规则/自定义清理类目"时使用。
+description: macOS 清理与本地开发环境维护工具箱（可被任意支持 Skill 的智能体安装使用）。①清理：自动探测 macOS 版本/芯片并按版本映射路径（Mail 的 Vx 目录、Catalina+ 密封系统卷、Apple Silicon Rosetta、Docker Desktop 差异），覆盖缓存/日志/废纸篓/安装包/邮件垃圾/Xcode 派生数据/iOS 备份/容器与浏览器缓存/Homebrew/字体缓存/应用支持目录缓存/大文件旧文件，以及 npm 生态（含 Electron 运行时与打包缓存）与 node_modules、Python 虚拟环境与 pip/uv/pyenv 缓存、Rust 依赖缓存与 cargo target/ 构建产物、C/C++ 编译与包缓存（ccache/sccache/Conan/vcpkg）与 cmake/make 构建产物、PHP/Composer 缓存与 vendor/、Go 模块与校验缓存、Ruby/其他包管理器缓存、Docker 构建缓存与未使用镜像与已停止容器、Time Machine 本地快照、临时文件（用户 $TMPDIR 与系统 /private/tmp，按 7 天未修改过滤）、系统诊断数据、休眠镜像、AI 模型缓存（HuggingFace/Ollama/LM Studio）、iOS 模拟器、外接卷废纸篓；②巡检：本机工况只读仪表盘（CPU/内存/网络/硬盘/SMART）；③运维：Docker 构建完成监控与通知、Docker Desktop 卡死诊断恢复；④安全与交付：首次推送前的凭据体检与历史清理、删除本地项目目录前的风险核查、本地网页交付前的浏览器验证、同源项目需求/设计文档合并。默认移入回收站（可恢复），系统级需 sudo，npm/Python/Rust/C++/PHP/Go/Docker/快照/模型/模拟器类目逐项目确认。当用户说"清理mac垃圾/释放磁盘空间/CleanMyMac/找出能删的大文件/清理缓存日志/清理临时文件/清理系统诊断/清理rust缓存/清理rust构建产物/清理cargo/清理c++构建缓存/清理cmake构建/清理ccache/清理composer/清理php vendor/清理electron缓存/清理AI模型/清理AI工具缓存/清理模拟器/清理外接盘废纸篓/找重复文件/清理相似图片/查大文件/设置忽略清单/性能维护任务/应用卸载残留/查看本机状态/系统监控/CPU占用/内存压力/硬盘空间/清理npm缓存/清理node_modules/清理python虚拟环境/清理conda环境/清理pip缓存/清理Go模块缓存/清理modcache/清理docker构建缓存/清理未使用镜像/清理停止的容器/清理Time Machine快照/关掉时间机器/docker构建完成告诉我/Docker起不来/docker卡死/推送到GitHub前检查有没有泄露密钥/删掉这个项目目录/网页跑起来看一眼/合并两个项目的文档/改扫描规则/自定义清理类目"时使用。
 ---
 
 # macOS 清理与本地开发环境维护
@@ -25,6 +25,7 @@ description: macOS 清理与本地开发环境维护工具箱（可被任意支�
 | 清 Composer 缓存 / PHP vendor | 主流程（`php_junk`，逐目录确认） | `references/categories.md` §6 |
 | 清临时文件 / 系统诊断 / 休眠镜像 | 主流程（`tmp_user`/`tmp_system`/`system_diagnostics`/`sleepimage`） | `references/categories.md` §8 |
 | 清 Rust / Ruby / Maven / Gradle / NuGet 缓存 | 主流程（`rust_cache`/`ruby_gem_cache`/`misc_pkg_cache`） | `references/categories.md` |
+| 清 Go 模块缓存 / 判断缓存该不该手动删 | 主流程（`go_junk`，逐目录确认） | `references/developer-cache-policy.md` |
 | 清 AI 模型 / iOS 模拟器 / 外接盘废纸篓 | 主流程（逐项确认，体积大但重建代价高） | `references/categories.md` §9 |
 | 清 Claude/Codex/Gemini/DevTools MCP 缓存日志 | 主流程（`ai_tool_junk`，只动缓存/日志/遥测） | `references/cleanmymac-binary-analysis.md` §3.1 |
 | 找重复文件 / 清相似图片 | 独立扫描 → 逐组复核 → 逐项确认 | `scripts/clutter_scan.py` → `scripts/clean.py`、`references/clutter-and-uninstaller.md` |
@@ -54,7 +55,7 @@ description: macOS 清理与本地开发环境维护工具箱（可被任意支�
 2. **优先回收站**：用户级移入 `~/.Trash`，系统级移入 `/.Trashes/<uid>`；仅 `--purge` 才永久删除。
    Docker 命令式清理（prune / rmi）**不经回收站、不可恢复**，必须先讲明。
 3. **绝不动用户核心数据**：文档/桌面/照片/邮件正文/钥匙串/`.app` 本体/工程源码（见 `references/safety.md`）。
-4. **逐项确认闸门**：`npm_junk`/`python_junk`/`rust_junk`/`cpp_junk`/`php_junk`/`docker_*`/`tm_local_snapshots`/
+4. **逐项确认闸门**：`npm_junk`/`python_junk`/`rust_junk`/`cpp_junk`/`php_junk`/`go_junk`/`docker_*`/`tm_local_snapshots`/
    `ai_model_cache`/`simulator_devices` 标记 `per_item_confirm=true`——必须逐个目录/资源向用户确认，
    把确认过的写进清单传 `--approved`；**未传 `--approved` 且非交互时脚本直接拒绝删除**（只记日志）。
    这是设计，不是故障，别绕过。
@@ -68,7 +69,7 @@ description: macOS 清理与本地开发环境维护工具箱（可被任意支�
 
 ## 规则库（v2.6.0：规则与代码分离）
 
-所有扫描策略数据都在 `<skill>/rules/`：`categories.json`（40 个类目）、`collectors.json`（自定义收集器路径与命令模板）、
+所有扫描策略数据都在 `<skill>/rules/`：`categories.json`（41 个类目）、`collectors.json`（自定义收集器路径与命令模板）、
 `defaults.json`（阈值、版本映射、保护路径）、`clutter.json`（重复/相似图参数），由 `manifest.json` 做 SHA-256 校验。
 `scripts/rules.py` 是唯一加载器；脚本里不再有路径清单或阈值副本。
 
@@ -212,6 +213,7 @@ python3 <skill>/scripts/clean.py --manifest <工作目录>/macos_clutter_manifes
 | 文档 | 内容 |
 |---|---|
 | `references/cleanmymac-benchmark.md` | CleanMyMac 实测 5.7.4 功能版图、官方机制、差距矩阵与不追项 |
+| `references/developer-cache-policy.md` | 各语言缓存官方清理口径、来源与日期、规则覆盖核对、新类目判定清单 |
 | `references/cleanmymac-binary-analysis.md` | 官方 DMG 只读分析：framework 版图、规则库、特权 agent、OAuth、逐项借鉴结论 |
 | `references/categories.md` | 类目清单 + 各 macOS 版本路径表 + 聚合粒度 + 命令式资源语义 |
 | `references/rules-library.md` | 外置规则库文件清单、占位符/条件语法、自定义与校验、回归方法 |
