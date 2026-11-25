@@ -9,7 +9,6 @@
   "browser_targets": [
     "{HOME}/Library/Caches/com.apple.Safari",
     "{HOME}/Library/Safari/Webpage Previews",
-    "{HOME}/Library/Safari/History.db",
     "{HOME}/Library/Caches/Google/Chrome",
     "{HOME}/Library/Application Support/Google/Chrome/Default/Cache",
     "{HOME}/Library/Caches/Firefox",

@@ -52,12 +52,12 @@
   脚本只打印命令、日志记 `manual`。
 - ⚠️ 硬禁止：不要手工执行 `tmutil deletelocalsnapshots` 去删 APFS 容器里那个
   `Sealed: Yes` 的系统启动快照——删了系统起不来。
-- ⚠️ `docker_junk`（`Docker.raw`）与 `docker_build_cache`/`docker_unused_images` 体积重叠，
-  报数时不能相加。
+- ⚠️ `docker_junk` 已停用：`Docker.raw` 是 Docker 虚拟磁盘（存放全部镜像/容器/卷），
+  `~/.docker` 含 CLI 配置与凭据，均不可清理。只走三个命令式 Docker 类目回收内部资源。
 
 ## 9. 权限边界不是 bug
 以下现象属 macOS 权限设计，**如实报告并跳过，不要试图绕过**：
 - `~/.Trash`、`com.apple.*` 容器等受 TCC 保护的路径，读取/移动返回 `Operation not permitted`。
 - 沙箱内 `sudo` 不可用（exit 127）；`tmutil` 写操作还额外要求调用方 App 持有「完全磁盘访问权限」。
-- 部分 `com.apple.*` 缓存（HomeKit / CloudKit / Safari History.db）需 FDA 才能动。
+- 部分 `com.apple.*` 缓存（HomeKit / CloudKit）需 FDA 才能动；Safari History.db 是浏览历史，已从扫描目标移除。
 - 读取受限时长/统计会失真（如 `top`、`du` 在沙箱内），结论里要标注不确定性。

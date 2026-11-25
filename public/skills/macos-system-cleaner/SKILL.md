@@ -1,6 +1,6 @@
 ---
 name: macos-system-cleaner
-version: 2.6.0
+version: 2.6.1
 display_name: macOS 系统清理与本地开发环境维护
 display_name_en: macOS System Cleaner & Local Dev Env Toolkit
 description_zh: 跨 macOS 版本的清理与运维工具箱：磁盘垃圾扫描清理（对标 CleanMyMac，含缓存/日志/邮件/Docker/Homebrew/Xcode/iOS 备份/npm/Python 虚拟环境）、Docker 构建缓存与未使用镜像回收、Time Machine 本地快照、本机工况（CPU/内存/网络/硬盘）、Docker 构建完成监控、Docker Desktop 卡死恢复、推送远程前的凭据体检、删项目目录前的风险核查、本地网页交付前验证、同源项目文档合并。默认移入回收站可恢复，破坏性操作一律逐项确认。
@@ -168,8 +168,9 @@ python3 <skill>/scripts/clean.py --manifest <工作目录>/macos_clutter_manifes
 | `docker_stopped_containers` | `docker container prune -f` | 只删已退出容器记录，不动运行中容器与数据卷 |
 | `tm_local_snapshots` | 只打印 `sudo tmutil deletelocalsnapshots <日期>` | **永不代跑**：写操作需 sudo + 完全磁盘访问权限 |
 
-⚠️ `docker_junk`（`Docker.raw` 稀疏文件）与上面三个 Docker 类目**体积重叠**，不要相加；
-先按 build cache → unused images → stopped containers 的顺序回收内部资源，raw 才会收缩。
+⚠️ `docker_junk` **已停用**（roots 为空，永不列出条目）：`Docker.raw` 是 Docker Desktop 虚拟磁盘，
+存放全部镜像/容器/卷；`~/.docker` 含 CLI 配置与凭据，均不可当垃圾清理。
+空间回收只按 build cache → unused images → stopped containers 的顺序进行，raw 才会收缩。
 
 ⚠️ 临时文件（`tmp_user`/`tmp_system`）是**唯一按时间判安全**的类目：只收 7 天未修改的顶层项，
 近期改动一律跳过——临时目录里的新文件很可能正被运行中进程占用。不要为了多清几百 MB 调低阈值。

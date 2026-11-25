@@ -32,10 +32,10 @@
 | xcode_junk | Xcode/开发者垃圾 | caution | user | DerivedData / Archives / iOS DeviceSupport / 模拟器缓存 |
 | ios_backups | iOS 备份 | caution | user | `~/Library/Application Support/MobileSync/Backup` |
 | containers_cache | 容器缓存 | safe | user | `~/Library/Containers`、`~/Library/Group Containers` 内各 App 的 `Caches` |
-| browser_cache | 浏览器缓存 | safe | user | Safari / Chrome / Firefox / Edge |
+| browser_cache | 浏览器缓存 | safe | user | Safari / Chrome / Firefox / Edge；不含 Safari History.db（浏览历史，非缓存） |
 | saved_state | 应用残留状态 | safe | user | `~/Library/Saved Application State` |
 | quicklook_cache | Quick Look 缓存 | safe | user | `com.apple.QuickLook.thumbnails` |
-| docker_junk | Docker 垃圾 | caution | user | Docker VM 磁盘镜像（`Docker.raw` 稀疏文件）与 `~/.docker` 缓存。⚠️ 体积与后两个 Docker 类目**重叠**，不要相加 |
+| docker_junk | Docker 垃圾（已停用） | caution | user | `roots: []`，永不列出 `Docker.raw` / `~/.docker`；Docker 资源只走下面三个命令式类目 |
 | homebrew_cache | Homebrew 缓存 | safe | user | `~/Library/Caches/Homebrew` 及 `/opt` 或 `/usr/local` 下 homebrew 缓存 |
 | font_cache | 字体缓存 | safe | user | `com.apple.fonts` 缓存 |
 | rosetta_cache | Rosetta 2 缓存 | system | system | 仅 Apple Silicon + macOS 11+：`/Library/Apple/usr/libexec/oah`、`/var/db/oah` |
@@ -126,9 +126,9 @@ Mail 的数据目录随 macOS 大版本改变 `V` 编号，清理邮件索引/�
 | `command` | manifest 里带 `cmd` 的 Docker 资源 | 执行 `docker <cmd>`，**永久生效、不经回收站**，需 `--approved` |
 | `manual` | 带 `manual` 命令字符串、需提权 | **永不执行**，只把命令打印给用户，日志记 `manual` |
 
-- `docker_junk`（VM 镜像）与 `docker_build_cache` / `docker_unused_images` / `docker_stopped_containers`
-  的**体积互相重叠**（后三者就装在 `Docker.raw` 里），报告时不能相加。正确顺序：先用
-  `docker_build_cache` → `docker_unused_images` → `docker_stopped_containers` 回收内部资源，
+- `docker_junk` 已停用：`Docker.raw` 是 Docker Desktop 虚拟磁盘（存放全部镜像/容器/卷），
+  `~/.docker` 是 CLI 配置与凭据，两者都不是垃圾。只按
+  `docker_build_cache` → `docker_unused_images` → `docker_stopped_containers` 的顺序回收内部资源，
   `Docker.raw` 才会随之收缩（且宿主机空间要等它压实才回来）。
 - 判断「未使用镜像」用「有没有容器引用它」（含已停止容器），不是看 dangling。
 - TM 快照体积无法精确计量（与系统共享数据块），manifest 里 `bytes=0`；

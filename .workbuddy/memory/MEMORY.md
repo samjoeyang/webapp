@@ -24,6 +24,7 @@
 - 每日 04:00 自动化（id `a209ca68…`）把源同步到安装副本，所以**只改安装副本会被覆盖**，一律改源。
 - 类目数说明：`build_categories()` 35 个 + `large_old_files` = 36（Apple Silicon 多一个 `rosetta_cache`）；**默认扫描只输出 user 范围类目（本机 30 个）**，system 类目要 `--include-system` 才出现，属正常设计。
 - `--approved` 同时接受清单文件路径与内联 JSON；解析失败会 `exit 2` 而非静默空清单（2026-10-30 修复）。
+- **规则误判（2026-11-25 实测）**：`docker_junk` 会把 Docker Desktop 虚拟磁盘 `~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw`（逻辑 60GB / 实际 25GB）列为垃圾；删除等于清空全部镜像与容器数据，务必排除。`browser_cache` 含 `~/Library/Safari/History.db`（浏览历史，非缓存），也要排除。`--approved` 默认只过滤 `per_item_confirm` 类目；配合 `--confirm-each` 可对任意类目按精确路径清单过滤（此时不会真的逐条提问）。
 
 ## 已建技能：ai-friendly-site（官网 AI 友好化改造 / GEO，2026-11-02 建；2026-11-03 归入 geo 分组）
 - **已归入 geo 分组（2026-11-03）**：参照 ipswordmaster 模式，源码迁至 `webapps/skills/geo/ai-friendly-site/`；`src/data.js` SKILLS 的 slug 改为 `geo/ai-friendly-site`；门户副本 `webapps/public/skills/geo/ai-friendly-site/`；分享包 `webapps/skills/geo/ai-friendly-site.zip`（旧 `skills/ai-friendly-site*` 已删并 commit）。安装副本保持扁平命名 `~/.workbuddy/skills/ai-friendly-site/`（与 ipswordmaster 一致，不进 geo 子目录）；改源后用 `rsync -a --delete webapps/skills/geo/ai-friendly-site/ ~/.workbuddy/skills/ai-friendly-site/` 同步。**无自动化同步**（与 macos-cleaner 不同）。

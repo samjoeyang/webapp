@@ -83,7 +83,7 @@
     },
     {
       "id": "browser_cache", "name": "浏览器缓存", "severity": "safe", "scope": "user",
-      "desc": "Safari / Chrome / Firefox / Edge 的缓存与历史缓存。",
+      "desc": "Safari / Chrome / Firefox / Edge 的缓存；不含浏览历史（Safari History.db 不是缓存，永不列入）。",
       "collector": "custom_browser", "roots": []
     },
     {
@@ -97,14 +97,10 @@
       "collector": "dir_top", "roots": ["{CACHE_HOME}/com.apple.QuickLook.thumbnails"]
     },
     {
-      "id": "docker_junk", "name": "Docker 垃圾", "severity": "caution", "scope": "user",
-      "desc": "Docker 虚拟机磁盘镜像（Docker.raw 稀疏文件）与 CLI 缓存（清理前确认无运行中容器）。⚠️ 该体积与「Docker 构建缓存」「Docker 未使用镜像」重叠（后者就装在这个 raw 文件里），不要相加；正确顺序是先用后两个类目回收内部资源，raw 才会随之收缩。",
+      "id": "docker_junk", "name": "Docker 垃圾（已停用）", "severity": "caution", "scope": "user",
+      "desc": "【已停用，roots 为空】Docker.raw 是 Docker Desktop 的虚拟磁盘，存放全部镜像/容器/卷；~/.docker 含 CLI 配置与凭据，均不可当垃圾清理。Docker 空间回收只走 docker_build_cache → docker_unused_images → docker_stopped_containers 三个命令式类目。",
       "collector": "dir_top_multi",
-      "roots": [
-        "{HOME}/Library/Containers/com.docker.docker/Data/vms",
-        "{HOME}/.docker",
-        {"path": "/Library/Containers/com.docker.docker", "when": {"sealed": false}}
-      ]
+      "roots": []
     },
     {
       "id": "homebrew_cache", "name": "Homebrew 缓存", "severity": "safe", "scope": "user",
