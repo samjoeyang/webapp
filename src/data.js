@@ -20,22 +20,22 @@ export const DESKTOP_APPS = [
   {
     ico:"🎛️", name:"SwitchKit", desc:"macOS 菜单栏快捷开关 + 系统资源释放工具：一键切换深色模式、隐藏桌面图标/Dock、阻止睡眠、清空废纸篓、屏幕清洁与台前调度；释放内存、刷新 DNS、按白名单预览清理用户缓存；蓝牙设备一键连接/断开；DeepSeek、Kimi、智谱 GLM、OpenRouter 等十余个平台的大模型余额实时查看；还能像 Bartender 一样收纳菜单栏图标。无 Dock 图标、默认不联网不上报，支持在线更新。",
     link:"https://switchkit.zhenzhidaole.com/", status:"desktop", label:"桌面端",
-    platforms:["macOS 10.14+","Apple Silicon / Intel"]
+    platforms:["macOS 12.7.6+","Apple Silicon / Intel"]
   },
   {
     ico:"💬", name:"unobox", desc:"Telegram 风格的跨平台私有即时通讯客户端：内置 OpenAI / Claude / Gemini / DeepSeek / Qwen / 火山引擎等 9 种 AI 模型（流式输出、思考过程可视化），EPUB 有声书阅读与 WAV/MP3 音频导出，Word/Excel/PDF/Markdown 全格式预览，自定义视频播放器，内置浏览器与三层视频嗅探。本地 SQLite / 自建 WebSocket / Matrix 三种协议可选，均支持端到端加密，数据主权由你掌控。",
     link:"https://unobox.zhenzhidaole.com/", status:"desktop", label:"桌面端",
-    platforms:["Windows","macOS","Linux"]
+    platforms:["Windows","macOS 12.7.6+","Linux"]
   },
   {
     ico:"📝", name:"UNOEditor", desc:"Markdown 排版主题编辑器：左边写稿、右边实时预览，11 套内置排版主题一键切换，字号/行高/强调色滑杆即调即生效；大纲自动生成并跟随光标，多文档本地保存；一键复制到公众号（计算样式递归内联、根节点转 section），或导出样式内嵌 HTML、Markdown、打印/PDF；纯本地运行零上传，断网可用，附 Tauri 2 桌面壳，中英界面一键切换。",
     link:"https://unoeditor.zhenzhidaole.com/", status:"desktop", label:"桌面端",
-    platforms:["macOS 10.15+","Windows","Linux"]
+    platforms:["macOS 12.7.6+","Windows","Linux"]
   },
   {
     ico:"📄", name:"PDF Studio", desc:"本地优先的桌面 PDF 工作台：合并、重排、拆分、旋转、批注签名、水印、文字提取与离线中英文 OCR、身份证排版、压缩优化等日常文档处理；所有处理都在本机完成，离线也能用，文档不上传任何服务器。",
     link:"https://pdfstudio.zhenzhidaole.com/", status:"desktop", label:"桌面端",
-    platforms:["Windows","macOS","Linux"]
+    platforms:["Windows","macOS 12.7.6+","Linux"]
   }
 ];
 
