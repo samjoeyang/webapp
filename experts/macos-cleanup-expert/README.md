@@ -27,7 +27,7 @@ Agent 型（单个 AI 专家）
 - 默认移入回收站（`~/.Trash` / `/.Trashes/<uid>`），仅 `--purge` 才永久删除
 - 逐项确认类目（npm / Python / Docker / 快照 / 模型 / 模拟器）未拿到 `--approved` 清单时**直接拒绝删除**
 - 每次清理写 `cleanup_log.json`，可追溯删了什么、去了哪
-- 平台：macOS 10.13+，`python3` 系统自带即可，零第三方依赖
+- 平台：macOS 12.7.6+，`python3` 系统自带即可，零第三方依赖
 
 ## 使用示例
 

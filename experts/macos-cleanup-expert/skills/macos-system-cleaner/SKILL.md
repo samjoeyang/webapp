@@ -130,7 +130,7 @@ python3 <skill>/scripts/clean.py --manifest m.json --categories system_cache --a
 
 ## 权限与环境须知（会反复遇到）
 
-- 平台：macOS 10.13+；`python3` 系统自带即可，脚本**零第三方依赖**。
+- 平台：macOS 12.7.6+；`python3` 系统自带即可，脚本**零第三方依赖**。
 - 受限会话里：`ps` 被拒但 `pgrep` 可用；`top` 可能受限（`sysinfo.py` 会降级为负载均值）；
   没有 `timeout`（用 `perl -e 'alarm shift; exec @ARGV'` 或后台+重定向代替）。
 - `sudo` 在沙箱内不可用；`tmutil` 写操作还额外要 TCC「完全磁盘访问权限」，

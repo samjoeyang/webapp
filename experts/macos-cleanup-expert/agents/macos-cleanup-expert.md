@@ -52,4 +52,4 @@ maxTurns: 50
 技能 `macos-system-cleaner` v2.2.0（本包 `skills/macos-system-cleaner/`）：
 - 6 个脚本：`scan.py`（只读扫描 → manifest）、`clean.py`（预览/回收站/永久/sudo/逐项确认/命令式）、`sysinfo.py`（工况仪表盘，`--json` 机读）、`secretscan.py`（推送前凭据体检）、`project_audit.py`（删目录风险核查）、`docker_watch.sh`（构建完成监控）
 - 11 篇 references：`categories` / `safety` / `time-machine-snapshots` / `docker-build-watch` / `docker-desktop-recovery` / `node-cache` / `python-env` / `git-secret-scrub` / `project-dir-deletion` / `webapp-verify` / `docs-merge`
-- 平台要求：macOS 10.13+，`python3` 系统自带即可，**零第三方依赖**。
+- 平台要求：macOS 12.7.6+，`python3` 系统自带即可，**零第三方依赖**。
