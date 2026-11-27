@@ -32,7 +32,6 @@
 - [研究依据核对](https://webapp.zhenzhidaole.com/skills/research-evidence-check/SKILL.md)：逐条核对结论↔依据对应、统计与定义口径一致。
 - [反偷拍扫描](https://webapp.zhenzhidaole.com/skills/hidden-camera-scanner/SKILL.md)：酒店/租房/会议室反偷拍排查五阶段法与分级风险报告。
 - [诉讼费用计算器](https://webapp.zhenzhidaole.com/skills/litigation-fee-calculator/SKILL.md)：测算法院诉讼费、律师费、保全/公证/鉴定等全部维权成本。
-- [macOS 清理与开发环境维护](https://webapp.zhenzhidaole.com/skills/macos-system-cleaner/SKILL.md)：跨 macOS 版本清理运维工具箱，36 个清理类目。
 
 ### 知识产权维权 Skills（IPSwordmaster）
 

@@ -66,11 +66,6 @@ export const SKILLS = [
     tags:["诉讼费","维权成本","法院收费","律师费","公证费"]
   },
   {
-    ico:"🧹", name:"macOS 清理与开发环境维护", slug:"macos-system-cleaner",
-    desc:"跨 macOS 版本的清理与运维工具箱，共 36 个清理类目。①清理：缓存/日志/邮件垃圾/Xcode 派生数据/iOS 备份/容器与浏览器缓存/Homebrew/字体缓存/应用支持目录缓存/大文件旧文件，npm/Python/Rust/Ruby/Maven/Gradle/NuGet 等各语言生态缓存与虚拟环境，Docker 构建缓存与未使用镜像与已停止容器，Time Machine 本地快照，临时文件（按 7 天未修改过滤，避免动正在使用的文件）、系统诊断数据、休眠镜像、AI 模型缓存、iOS 模拟器、外接卷废纸篓；②巡检：CPU/内存/网络/硬盘只读仪表盘；③运维：Docker 构建完成监控、Docker Desktop 卡死恢复；④交付前安全：首次推送的凭据体检、删项目目录的风险核查、本地网页浏览器验证、同源项目文档合并。自动适配不同 macOS 版本路径差异，默认移入回收站可恢复，破坏性操作逐项确认。任何支持从 URL 安装 Skill 的智能体均可使用。",
-    tags:["macOS","清理","释放空间","Docker","凭据体检","运维"]
-  },
-  {
     ico:"🌐", name:"官网 AI 友好化改造（GEO）", slug:"geo/ai-friendly-site",
     desc:"让 AI 搜索引擎（ChatGPT/Gemini/DeepSeek/豆包等）在回答「买哪个 / 哪家是正品」时准确推荐你、对冲仿冒。基于本地项目 / 目录 / 网站 URL 审计 AI 友好化缺口（llms.txt、schema.org JSON-LD、FAQ 标准答案页、正品声明页、实体一致性、内链），并生成可直接落地的优化文件。",
     tags:["GEO","AI友好化","SEO","llms.txt","JSON-LD"]
